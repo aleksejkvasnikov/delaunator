@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>circledetails</class>
+ <widget class="QWidget" name="circledetails">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>274</width>
+    <height>202</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="1" column="0">
+    <widget class="QLineEdit" name="x0Edit"/>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="y0Edit"/>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLineEdit" name="x1Edit"/>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="y1Edit"/>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLineEdit" name="pointsEdit">
+     <property name="text">
+      <string>30</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QRadioButton" name="groundedButt">
+     <property name="text">
+      <string>Grounded</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1">
+    <widget class="QRadioButton" name="chargedButt">
+     <property name="text">
+      <string>Charged</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QPushButton" name="okButton">
+     <property name="text">
+      <string>Ok</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QPushButton" name="cancelButton">
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Conductor</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Number of points</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>x1</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>y1</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>x0</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>y0</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

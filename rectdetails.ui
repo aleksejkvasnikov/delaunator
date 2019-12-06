@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>rectDetails</class>
+ <widget class="QWidget" name="rectDetails">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>250</width>
+    <height>200</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Геометрия</string>
+  </property>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="2" column="1">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>xMax</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="xMaxEdit"/>
+   </item>
+   <item row="7" column="1">
+    <widget class="QLineEdit" name="yMaxEdit"/>
+   </item>
+   <item row="10" column="1">
+    <widget class="QRadioButton" name="chargedButt">
+     <property name="text">
+      <string>Charged</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>xMin</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="1">
+    <widget class="QPushButton" name="cancelButton">
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="13" column="0">
+    <widget class="QPushButton" name="okButton">
+     <property name="text">
+      <string>Ok</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QRadioButton" name="groundedButt">
+     <property name="text">
+      <string>Grounded</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>yMax</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>yMin</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLineEdit" name="xMinEdit"/>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLineEdit" name="yMinEdit"/>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Conductor</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
