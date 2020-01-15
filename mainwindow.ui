@@ -25,6 +25,9 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <widget class="QPushButton" name="pointButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Точка</string>
            </property>
@@ -86,6 +89,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Connect</string>
            </property>
@@ -93,6 +99,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="make_1_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Add Points</string>
            </property>
@@ -198,7 +207,7 @@
      <x>0</x>
      <y>0</y>
      <width>669</width>
-     <height>26</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>

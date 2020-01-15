@@ -192,10 +192,18 @@ void GraphicScene::mouseReleaseEvent(QGraphicsSceneMouseEvent * me)
             int radius = 2;
             QGraphicsEllipseItem * ellipse = this->addEllipse(me->scenePos().x() - radius, me->scenePos().y() - radius, radius*2, radius*2);
 
-            ellipse->setBrush(Qt::white);
-            m_points.append(me->scenePos());
+
+            //if (pointszone->getStatus())
+            //{
+            //    ellipse->setBrush(Qt::blue);
+            //    inside_points.push_back(me->scenePos());
+            //} else {
+            //    ellipse->setBrush(Qt::red);
+            //    outside_points.push_back(ne->scenePos());
+            //}
+            //m_points.append(me->scenePos());
         }
-        if(this->activeDrawer == 4)
+        if(this->activeDrawer == 4) // DELETE OR REDO
         {
             if(find_nearest_point(me->scenePos())){
                 int radius = 1;

@@ -310,13 +310,13 @@ void MainWindow::pointszone_entered()
     scene->setActiveDrawer(1);
     if (scene->pointszone->getStatus())
     {
-        ui->pointButton->setStyleSheet("background:#ff0000;");
+        ui->pointButton->setStyleSheet("background:#0000ff;");
         ui->rectButton->setStyleSheet("");
         ui->circleButton->setStyleSheet("");
     }
     else
     {
-        ui->pointButton->setStyleSheet("background:#0000ff;");
+        ui->pointButton->setStyleSheet("background:#ff0000;");
         ui->rectButton->setStyleSheet("");
         ui->circleButton->setStyleSheet("");
     }
