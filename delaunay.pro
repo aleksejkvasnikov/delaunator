@@ -61,3 +61,14 @@ DEPENDPATH += $$PWD/include
 unix|win32: LIBS += -L$$PWD/examples/lib_win64/ -llapack_win64_MT
 INCLUDEPATH += $$PWD/examples/lib_win64
 DEPENDPATH += $$PWD/examples/lib_win64
+
+QMAKE_EXTRA_TARGETS += before_build makefilehook
+
+makefilehook.target = $(MAKEFILE)
+makefilehook.depends = .beforebuild
+
+PRE_TARGETDEPS += .beforebuild
+
+before_build.target = .beforebuild
+before_build.depends = FORCE
+before_build.commands = chcp 1251

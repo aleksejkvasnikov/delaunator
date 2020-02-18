@@ -8,7 +8,7 @@
 #include <graphics_view_zoom.h>
 #include "armadillo"
 #include "QColor"
-
+int a;
 #define M_PI 3.14
 using namespace arma;
 MainWindow::MainWindow(QWidget *parent) :
