@@ -19,7 +19,7 @@ public:
     ~MainWindow();
     GraphicScene *scene;
     PointsZone *pointszone;
-    void get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs);
+    void get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs,mat domains);
 private:
     Ui::MainWindow *ui;
 

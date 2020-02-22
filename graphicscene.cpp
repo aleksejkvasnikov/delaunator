@@ -264,6 +264,7 @@ void GraphicScene::drawFinalRect()
     rect->setBrush(Qt::transparent);
     QPen red_pen(Qt::red);
     QPen blue_pen(Qt::blue);
+    QPen green_pen(Qt::green);
     QRectF qrf = rect->rect();
     // LOOK HERE 16.10
     QList <QPointF> *temp_points = new QList <QPointF>;
@@ -271,14 +272,18 @@ void GraphicScene::drawFinalRect()
     temp_points->append(qrf.topRight());
     temp_points->append(qrf.bottomRight());
     temp_points->append(qrf.bottomLeft());
-    if(rectDet->getStatus()){
+    if(rectDet->getStatus()==1){
         qDebug () << "inside";
         rect->setPen(blue_pen);
         inside_points.push_back(temp_points);
-    } else {
+    } else if(rectDet->getStatus()==0){
         qDebug () << "outside";
         rect->setPen(red_pen);
         outside_points.push_back(temp_points);
+    }
+    else {
+        rect->setPen(green_pen);
+        dielectric_points.push_back(temp_points);
     }
     rectDet->hide();
 }
@@ -312,12 +317,15 @@ void GraphicScene::drawFinalCircle()
        this->addEllipse(x - radius, y - radius, radius*2, radius*2);
        angle+=anglepoint;
     }
-    if(circleDet->getStatus()){
+    if(circleDet->getStatus()==1){
         qDebug () << "inside";
         inside_points.push_back(temp_points);
-    } else {
+    } else if(circleDet->getStatus()==0){
         qDebug () << "outside";
         outside_points.push_back(temp_points);
+    }
+    else{
+        dielectric_points.push_back(temp_points);
     }
 }
 
@@ -327,7 +335,7 @@ void GraphicScene::connectPoints()
     QPen red(Qt::red,Qt::DashLine);
     QPen blue(Qt::blue,Qt::DashLine);
 
-    if (pointszone->getStatus())
+    if (pointszone->getStatus()==1)
     {
         temp_points->append(m_points[0]);
         for( int i=1; i<m_points.count(); ++i )
@@ -338,7 +346,7 @@ void GraphicScene::connectPoints()
         this->addLine(m_points.at(m_points.count()-1).x(),m_points.at(m_points.count()-1).y(), m_points.at(0).x(),m_points.at(0).y(), red);
         inside_points.push_back(temp_points);
     }
-    else
+    else if(pointszone->getStatus()==0)
     {
         temp_points->append(m_points[0]);
 
@@ -350,6 +358,18 @@ void GraphicScene::connectPoints()
         this->addLine(m_points.at(m_points.count()-1).x(),m_points.at(m_points.count()-1).y(), m_points.at(0).x(),m_points.at(0).y(), blue);
         outside_points.push_back(temp_points);
     }
+    else
+    {
+        temp_points->append(m_points[0]);
+
+        for( int i=1; i<m_points.count(); ++i )
+        {
+           this->addLine(m_points.at(i-1).x(),m_points.at(i-1).y(), m_points.at(i).x(),m_points.at(i).y(), blue);
+            temp_points->append(m_points[i]);
+        }
+        this->addLine(m_points.at(m_points.count()-1).x(),m_points.at(m_points.count()-1).y(), m_points.at(0).x(),m_points.at(0).y(), blue);
+        dielectric_points.push_back(temp_points);
+    }
     m_points.clear();
     setActiveDrawer(0);
 }
@@ -359,6 +379,7 @@ void GraphicScene::eraseAll()
     m_points.clear();
     outside_points.clear();
     inside_points.clear();
+    dielectric_points.clear();
     this->clear();
     QPen penZero(Qt::darkGreen, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     QPen penLine(Qt::darkGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -673,6 +694,16 @@ void GraphicScene::doTriangles()
         }
         all_Outside_points.push_back(vPoints1);
     }
+    for (int i=0;i<dielectric_points.size();i++)
+    {
+        std::vector<Point2> vPoints1;
+        vPoints1.clear();
+        for (int j=0; j<outside_points.at(i)->count();j++)
+        {
+            vPoints1.push_back(Point2(dielectric_points.at(i)->at(j).toPoint().x(),dielectric_points.at(i)->at(j).toPoint().y()));
+        }
+        all_Outside_points.push_back(vPoints1);
+    }
 
 
     for (int i; i<all_Outside_points.size();i++)
@@ -922,4 +953,60 @@ void GraphicScene::doTriangles()
         //trs << endr;
     }
    // qDebug() << bcs_vec;
+    // Нахождение треугольников в зоне диэлектрика(только для прямоугольников) ////////////////////////////////////////////
+    for(int k=0; k<trs.size()/3;k++)
+    {
+        domains.push_back(std::make_pair(k,1));
+        int rez=0;
+        for (int i=0; i<dielectric_points.size();i++)
+        {
+            double Xmax,Xmin,Ymax,Ymin;
+            Xmax=dielectric_points.at(i)->at(0).x();
+            Xmin=dielectric_points.at(i)->at(0).x();
+            Ymax=dielectric_points.at(i)->at(0).y();
+            Ymin=dielectric_points.at(i)->at(0).y();
+            //qDebug()<<dielectric_points.at(i)->size();
+            for (int j=0; j<dielectric_points.at(i)->size();j++)
+            {
+                if (dielectric_points.at(i)->at(j).x()>Xmax)
+                    Xmax=dielectric_points.at(i)->at(j).x();
+                if (dielectric_points.at(i)->at(j).x()<Xmin)
+                    Xmin=dielectric_points.at(i)->at(j).x();
+                if (dielectric_points.at(i)->at(j).y()>Ymax)
+                    Ymax=dielectric_points.at(i)->at(j).y();
+                if (dielectric_points.at(i)->at(j).y()<Ymin)
+                    Ymin=dielectric_points.at(i)->at(j).y();
+                //qDebug()<<Xmax<<" "<<Xmin;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3)).second<=Ymax)
+                    rez++;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3+1)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3+1)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3+1)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3+1)).second<=Ymax)
+                    rez++;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3+2)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3+2)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3+2)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3+2)).second<=Ymax)
+                    rez++;
+            }
+            if (rez==3)
+            {
+                domains.at(k).second=2;
+            }
+        }
+        rez=0;
+    }
+    for (int i=0; i<domains.size(); i++)
+    {
+        if (domains.at(i).second==2)
+        {
+            qDebug()<<domains.at(i);
+        }
+    }
+    // //////////////////////////////////////////////////////////////////////////////////
 }
+

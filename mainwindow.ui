@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>669</width>
-    <height>633</height>
+    <width>695</width>
+    <height>640</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -133,6 +133,24 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QLabel" name="dielectric_label">
+               <property name="text">
+                <string>Dielectric constant</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="dielectric_edit">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
               <widget class="QLabel" name="label_3">
@@ -206,8 +224,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>669</width>
-     <height>20</height>
+     <width>695</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>

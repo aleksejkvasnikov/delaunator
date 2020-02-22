@@ -41,7 +41,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::doFEMcalc(bool mode)
 {
-    mat bcs, nodes, trs;
+    mat bcs, nodes, trs, domains;
     nodes.clear();
     nodes.set_size(scene->nodes_vec.size(), 2);
 
@@ -64,9 +64,18 @@ void MainWindow::doFEMcalc(bool mode)
         bcs(i,0) = scene->bcs_vec.at(i).first;
         bcs(i,1) = scene->bcs_vec.at(i).second;
     }
-    cout << "\n--------------\n";
-    cout << bcs;
-    qDebug()<<scene->getMapData(bcs(1,0));
+    //cout << "\n--------------\n";
+    //cout << bcs;
+    //qDebug()<<scene->getMapData(bcs(1,0));
+
+    domains.clear();
+    domains.set_size(scene->domains.size(),2);
+    for (int i=0; i<scene->domains.size(); i++)
+    {
+        domains(i,0)=scene->domains.at(i).first;
+        domains(i,1)=scene->domains.at(i).second;
+    }
+
     int nr_nodes = nodes.n_rows;
     int nr_trs = trs.n_rows;
     int nr_bcs = bcs.n_rows;
@@ -102,25 +111,35 @@ void MainWindow::doFEMcalc(bool mode)
         b(2,i) = temp(1,0);
         c(2,i) = temp(2,0);
         //qDebug() << a(n1,n1) << Area << pow(b(0,i),2) << pow(c(0,i),2);
-        a(n1,n1) = a(n1,n1) + Area*(pow(b(0,i),2) + pow(c(0,i),2));
-        a(n1,n2) = a(n1,n2) + Area*(b(0,i)*b(1,i) + c(0,i)*c(1,i));
-        a(n1,n3) = a(n1,n3) + Area*(b(0,i)*b(2,i) + c(0,i)*c(2,i));
+
+        double eps;
+        if(domains.at(i)==2)
+            eps=ui->dielectric_edit->text().toDouble();
+        else
+            eps=1;
+
+
+
+        a(n1,n1) = a(n1,n1) + Area*(pow(b(0,i),2) + pow(c(0,i),2))*(-eps);
+        a(n1,n2) = a(n1,n2) + Area*(b(0,i)*b(1,i) + c(0,i)*c(1,i))*(-eps);
+        a(n1,n3) = a(n1,n3) + Area*(b(0,i)*b(2,i) + c(0,i)*c(2,i))*(-eps);
         //qDebug() << a(n1,n1) << a(n1,n2) << a(n1,n3);
 
-        a(n2,n2) = a(n2,n2) + Area*(pow(b(1,i),2) + pow(c(1,i),2));
-        a(n2,n1) = a(n2,n1) + Area*(b(1,i)*b(0,i) + c(1,i)*c(0,i));
-        a(n2,n3) = a(n2,n3) + Area*(b(1,i)*b(2,i) + c(1,i)*c(2,i));
+        a(n2,n2) = a(n2,n2) + Area*(pow(b(1,i),2) + pow(c(1,i),2))*(-eps);
+        a(n2,n1) = a(n2,n1) + Area*(b(1,i)*b(0,i) + c(1,i)*c(0,i))*(-eps);
+        a(n2,n3) = a(n2,n3) + Area*(b(1,i)*b(2,i) + c(1,i)*c(2,i))*(-eps);
         //qDebug() << a(n2,n2) << a(n2,n1) << a(n2,n3);
 
-        a(n3,n3) = a(n3,n3) + Area*(pow(b(2,i),2) + pow(c(2,i),2));
-        a(n3,n1) = a(n3,n1) + Area*(b(2,i)*b(0,i) + c(2,i)*c(0,i));
-        a(n3,n2) = a(n3,n2) + Area*(b(2,i)*b(1,i) + c(2,i)*c(1,i));
+        a(n3,n3) = a(n3,n3) + Area*(pow(b(2,i),2) + pow(c(2,i),2))*(-eps);
+        a(n3,n1) = a(n3,n1) + Area*(b(2,i)*b(0,i) + c(2,i)*c(0,i))*(-eps);
+        a(n3,n2) = a(n3,n2) + Area*(b(2,i)*b(1,i) + c(2,i)*c(1,i))*(-eps);
         //qDebug() << a(n3,n3) << a(n3,n1) << a(n3,n2);
     }
     //cout << a;
     //a.save("After.txt", arma_ascii);
     for(int i=0; i<nr_bcs; i++){
-        double n = bcs(i,0) ;
+        double n = bcs(i,0);
+        //if (bcs(i,1)==1){
         a.row(n).fill(0.0);
         a(n,n) = 1.0;
         f(n,0) = bcs(i,1);
@@ -133,7 +152,7 @@ void MainWindow::doFEMcalc(bool mode)
             f(i,0) = 0.0;
         }
     }
-    //a.save("After.txt", arma_ascii);
+    a.save("Arrr.txt", arma_ascii);
    // cout << a;
     //cout << "\n--------------\n";
    //cout << f;
@@ -141,20 +160,25 @@ void MainWindow::doFEMcalc(bool mode)
    mat v;
     v = solve(mat(a),f);
   // cout << v;
-    get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs);
+    get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
     if(!mode)
         scene->get_tri2d_E(v, nr_nodes, nr_trs, nodes, trs);
     else scene->show_mesh(v, nr_trs, nodes, trs);
 
 }
-void MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs)
+void MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs, mat domains)
 {
     double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
     double mu0 = 4.0 * M_PI * pow(10.0, -7);
     double U = 0.0; double c1,c2,c3,b1,b2,b3;
+    double eps;
     //cout << v;
     mat d(3,3, fill::ones);
     for(int i=0; i<nr_trs; i++){
+        if (domains(i,1)==2)
+            eps=ui->dielectric_edit->text().toDouble();
+        else
+            eps=1;
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         //qDebug() << n1 << n2 << n3;
         //qDebug() << i;
@@ -179,18 +203,24 @@ void MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, m
         if (Area <=0){
             qDebug() << "ERROR";
         }
+
         //qDebug() << pow((v(n1,0)*b1 + v(n2,0)*b2 + v(n3,0)*b3),2);
-        U = U + Area * ( pow((v(n1,0)*b1 + v(n2,0)*b2 + v(n3,0)*b3),2) + pow((v(n1,0)*c1 + v(n2,0)*c2 + v(n3,0)*c3),2));
+        U = U + Area * ( pow((v(n1,0)*b1 + v(n2,0)*b2 + v(n3,0)*b3),2) + pow((v(n1,0)*c1 + v(n2,0)*c2 + v(n3,0)*c3),2))*eps;
         //qDebug() << U;
     }
     U=U*eps0/2.0;
     double C = 2*U;
 
+    QString text;
     qDebug() << "C = " << C;
     double L = (mu0 * eps0)/ C;
     qDebug() << "L = " << L;
     double Z1 = pow((L/C),0.5);
     qDebug() << "Z1 = " << Z1;
+    text="C = "+QString::number(C);
+    ui->textBrowser->setText(text);
+
+
 }
 
 void MainWindow::move_scene_slot(bool mode)

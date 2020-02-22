@@ -33,6 +33,7 @@ public:
     QVector<std::pair<double, double>> nodes_vec;
     QVector<double>  trs_vec;
     std::vector<std::pair<double, double>> bcs_vec;
+    std::vector<std::pair<double, double>> domains;
     virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent);
@@ -78,6 +79,7 @@ private:
     QList <tr_object> objects;
     QList <QPointF> m_points;
     QVector<QList <QPointF> *> outside_points;
+    QVector<QList <QPointF> *> dielectric_points;
     QVector<QList <QPointF> *> inside_points;
     QList <QGraphicsItem *> m_items;
 };

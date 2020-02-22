@@ -19,7 +19,7 @@ public:
     double getMaxX(){ return maxX;}
     double getMinY(){ return minY;}
     double getMaxY(){ return maxY;}
-    bool getStatus(){ return gr_checked;}
+    int getStatus(){ return gr_checked;}
 signals:
     void detail_entered();
 private slots:
@@ -31,10 +31,12 @@ private slots:
 
     void on_cancelButton_clicked();
 
+    void on_dielectricButton_clicked();
+
 private:
     Ui::rectDetails *ui;
     double minX, maxX, minY, maxY;
-    bool gr_checked = false;
+    int gr_checked = 0;
 };
 
 #endif // RECTDETAILS_H
