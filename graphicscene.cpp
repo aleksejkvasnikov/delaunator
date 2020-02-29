@@ -266,10 +266,33 @@ void GraphicScene::drawLoad()
     for( int i=0; i<inside_points.size(); ++i )
     {
         for(int j=1; j<inside_points.at(i)->size();j++)
-       this->addLine(inside_points.at(i)->at(j-1).x(),inside_points.at(i)->at(j).x(),inside_points.at(i)->at(j-1).y(),inside_points.at(i)->at(j).y(),red);
-        this->addLine(inside_points.at(i)->at(inside_points.at(i)->size()-1).x(),inside_points.at(i)->at(0).x(),inside_points.at(i)->at(inside_points.at(i)->size()-1).y(),inside_points.at(i)->at(0).y(),red);
-    }
+        this->addLine(inside_points.at(i)->at(j-1).x(),inside_points.at(i)->at(j-1).y(),
+                      inside_points.at(i)->at(j).x(),
+                      inside_points.at(i)->at(j).y(),blue);
 
+        this->addLine(inside_points.at(i)->at(inside_points.at(i)->size()-1).x(),inside_points.at(i)->at(inside_points.at(i)->size()-1).y(),
+                      inside_points.at(i)->at(0).x(),inside_points.at(i)->at(0).y(),blue);
+    }
+    for( int i=0; i<outside_points.size(); ++i )
+    {
+        for(int j=1; j<outside_points.at(i)->size();j++)
+        this->addLine(outside_points.at(i)->at(j-1).x(),outside_points.at(i)->at(j-1).y(),
+                      outside_points.at(i)->at(j).x(),
+                      outside_points.at(i)->at(j).y(),red);
+
+        this->addLine(outside_points.at(i)->at(outside_points.at(i)->size()-1).x(),outside_points.at(i)->at(outside_points.at(i)->size()-1).y(),
+                      outside_points.at(i)->at(0).x(),outside_points.at(i)->at(0).y(),red);
+    }
+    for( int i=0; i<dielectric_points.size(); ++i )
+    {
+        for(int j=1; j<dielectric_points.at(i)->size();j++)
+        this->addLine(dielectric_points.at(i)->at(j-1).x(),dielectric_points.at(i)->at(j-1).y(),
+                      dielectric_points.at(i)->at(j).x(),
+                      dielectric_points.at(i)->at(j).y(),green);
+
+        this->addLine(dielectric_points.at(i)->at(dielectric_points.at(i)->size()-1).x(),dielectric_points.at(i)->at(dielectric_points.at(i)->size()-1).y(),
+                      dielectric_points.at(i)->at(0).x(),dielectric_points.at(i)->at(0).y(),green);
+    }
 }
 
 void GraphicScene::drawFinalRect()
@@ -813,7 +836,13 @@ void GraphicScene::doTriangles()
     Zone2* pZone(iZone->convertToBoundedZone());
     MeshGenParams params(pZone);
     //std::cout << minAngle << minEdgeLen << maxEdgeLen  << std::endl;
+
+
+
+    // МОЖЕТ ВЫЗЫВАТЬ ОШИБКУ
     dt.refine(pZone,minAngle,minEdgeLen,maxEdgeLen,true); // max should be max 1/3 of max
+    //
+
      qDebug()<<"14";
     //std::vector<Triangle2*> vZoneT;
     vZoneT.clear();
@@ -1077,9 +1106,6 @@ void GraphicScene::doTriangles()
     calczone_trs.clear();
     }
     //qDebug()<<map;
-
-
-
 
 }
 

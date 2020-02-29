@@ -251,7 +251,7 @@ void MainWindow::doFEMcalc(bool mode)
        C(1,0) = C12;
        C(1,1) = C22 + C12;
        qDebug()<<"****************************";
-       qDebug()<<
+      // qDebug()<<
        qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
        qDebug()<<endl;
        qDebug()<<C11<<", "<<C12;
@@ -455,31 +455,56 @@ void MainWindow::pointszone_entered()
 
 void MainWindow::on_saveButton_clicked()
 {
-   /* QString fileName = QFileDialog::getSaveFileName(this,tr("Save file"));
+    QString fileName = QFileDialog::getSaveFileName(this,tr("Save file"));
     if (fileName.isEmpty())
              return;
          else {
-             QFile file(fileName);
+             QFile file(fileName+".str");
              if (!file.open(QIODevice::WriteOnly)) {
                  QMessageBox::information(this, tr("Unable to open file"),
                      file.errorString());
                  return;
              }
              QDataStream out(&file);
-                      out.setVersion(QDataStream::Qt_5_10);
-                      QVector<QList <QPointF> *> inside,outside,dielectric;
-                      inside = scene->getInside();
-                      outside = scene->getOutside();
-                      dielectric = scene->getDielectric();
+                    //  out.setVersion(QDataStream::Qt_5_10);
+                      QVector<QList <QPointF> *> inside1,outside1,dielectric1;
+                      QVector<QList <QPointF> > inside,outside,dielectric;
+                      inside1 = scene->getInside();
+                      for(int i=0; i<scene->getInside().size(); i++){
+                          QList <QPointF> List;
+                          for(int j=0; j<scene->getInside().at(i)->size(); j++){
+                              QPointF a = inside1.at(i)->at(j);
+                              List.push_back(a);
+                          }
+                          inside.push_back(List);
+                      }
+                      outside1 = scene->getOutside();
+                      for(int i=0; i<scene->getOutside().size(); i++){
+                          QList <QPointF> List;
+                          for(int j=0; j<scene->getOutside().at(i)->size(); j++){
+                              QPointF a = outside1.at(i)->at(j);
+                              List.push_back(a);
+                          }
+                          outside.push_back(List);
+                      }
+                      dielectric1 = scene->getDielectric();
+                      for(int i=0; i<scene->getDielectric().size(); i++){
+                          QList <QPointF> List;
+                          for(int j=0; j<scene->getDielectric().at(i)->size(); j++){
+                              QPointF a = dielectric1.at(i)->at(j);
+                              List.push_back(a);
+                          }
+                          dielectric.push_back(List);
+                      }
                       out<<inside<<outside<<dielectric;
-    }*/
+    }
 }
 
 void MainWindow::on_loadButton_clicked()
 {
-   /* QString fileName = QFileDialog::getOpenFileName(this,
-             tr("Open Address Book"), "",
-             tr("Address Book (*.abk);;All Files (*)"));
+    QString fileName = QFileDialog::getOpenFileName(this,
+             tr("Open structure file"), "",
+             tr("Structure (*.str);;All Files (*)"));
     if (fileName.isEmpty())
             return;
         else {
@@ -492,12 +517,38 @@ void MainWindow::on_loadButton_clicked()
                 return;
             }
             QDataStream in(&file);
-            in.setVersion(QDataStream::Qt_5_10);
-            QVector<QList <QPointF> *> inside,outside,dielectric;
+          //  in.setVersion(QDataStream::Qt_5_10);
+            QVector<QList <QPointF>> inside,outside,dielectric;
             in >> inside>>outside>>dielectric;
-            scene->SetInside(inside);
-            scene->SetOutside(outside);
-            scene->SetDielectric(dielectric);
+            QVector<QList <QPointF> *> inside1,outside1,dielectric1;
+
+            for(int i=0; i<inside.size(); i++){
+                QList <QPointF>* List = new QList<QPointF>;
+                for(int j=0; j<inside.at(i).size(); j++){
+                    QPointF a = inside.at(i).at(j);
+                    List->push_back(a);
+                }
+                inside1.push_back(List);
+            }
+            for(int i=0; i<outside.size(); i++){
+                QList <QPointF>* List = new QList<QPointF>;
+                for(int j=0; j<outside.at(i).size(); j++){
+                    QPointF a = outside.at(i).at(j);
+                    List->push_back(a);
+                }
+                outside1.push_back(List);
+            }
+            for(int i=0; i<dielectric.size(); i++){
+                QList <QPointF>* List = new QList<QPointF>;
+                for(int j=0; j<dielectric.at(i).size(); j++){
+                    QPointF a = dielectric.at(i).at(j);
+                    List->push_back(a);
+                }
+                dielectric1.push_back(List);
+            }
+            scene->SetInside(inside1);
+            scene->SetOutside(outside1);
+            scene->SetDielectric(dielectric1);
             scene->drawLoad();
-    }*/
+    }
 }
