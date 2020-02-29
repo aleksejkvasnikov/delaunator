@@ -172,6 +172,7 @@ void MainWindow::doFEMcalc(bool mode)
     v = solve(mat(a),f);
   // cout << v;
     get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
+    qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
     }
 
     if (scene->calc_trs.size()==1)
@@ -251,17 +252,17 @@ void MainWindow::doFEMcalc(bool mode)
        C(1,0) = C12;
        C(1,1) = C22 + C12;
        qDebug()<<"****************************";
-       qDebug()<<
+       qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
        qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
        qDebug()<<endl;
        qDebug()<<C11<<", "<<C12;
        qDebug()<<C12<<", "<<C22;
        qDebug()<<endl;
        cout<<C;
-       if(!mode)
+      /* if(!mode)
           scene->get_tri2d_E(v11, nr_nodes, nr_trs, nodes, trs);
       else scene->show_mesh(v12, nr_trs, nodes, trs);
-
+*/
     }
 
 
