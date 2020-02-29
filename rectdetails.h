@@ -33,6 +33,8 @@ private slots:
 
     void on_dielectricButton_clicked();
 
+    void on_calcButton_clicked();
+
 private:
     Ui::rectDetails *ui;
     double minX, maxX, minY, maxY;

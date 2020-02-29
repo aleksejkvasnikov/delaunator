@@ -21,6 +21,12 @@ class GraphicScene : public QGraphicsScene
     Q_OBJECT
 public:
     int getMapData(int key);
+    QVector<QList <QPointF> *> getInside(){return  inside_points;}
+    QVector<QList <QPointF> *> getOutside(){return outside_points;}
+    QVector<QList <QPointF> *> getDielectric(){return dielectric_points;}
+    void SetInside(QVector<QList <QPointF> *> inside){inside_points=inside;}
+    void SetOutside(QVector<QList <QPointF> *> outside){outside_points=outside;}
+    void SetDielectric(QVector<QList <QPointF> *> dielectric){dielectric_points=dielectric;}
     explicit GraphicScene(QObject *parent = 0);
     void setQualPoints(int n);
     void get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, mat trs);
@@ -34,6 +40,9 @@ public:
     QVector<double>  trs_vec;
     std::vector<std::pair<double, double>> bcs_vec;
     std::vector<std::pair<double, double>> domains;
+    QVector <std::pair<double,double>> calczone_nodes;
+    QVector<QList <double>> calc_trs;
+    QList<double> calczone_trs;
     virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent);
@@ -53,6 +62,7 @@ signals:
 
 
 public slots:
+    void drawLoad();
     void drawFinalRect();
     void drawFinalCircle();
     void connectPoints();
@@ -81,6 +91,7 @@ private:
     QVector<QList <QPointF> *> outside_points;
     QVector<QList <QPointF> *> dielectric_points;
     QVector<QList <QPointF> *> inside_points;
+    QVector<QList <QPointF> *> calczone_points;
     QList <QGraphicsItem *> m_items;
 };
 

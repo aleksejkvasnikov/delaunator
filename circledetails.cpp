@@ -58,3 +58,5 @@ void circledetails::on_dielectricButton_clicked()
     ui->chargedButt->setChecked(false);
     gr_checked = 2;
 }
+
+

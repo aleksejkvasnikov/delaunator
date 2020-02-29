@@ -8,6 +8,10 @@
 #include <graphics_view_zoom.h>
 #include "armadillo"
 #include "QColor"
+#include <QFileDialog>
+#include <QDataStream>
+#include <QMessageBox>
+
 int a;
 #define M_PI 3.14
 using namespace arma;
@@ -41,6 +45,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::doFEMcalc(bool mode)
 {
+    mat AA;
+    AA.load("Aq.txt");
     mat bcs, nodes, trs, domains;
     nodes.clear();
     nodes.set_size(scene->nodes_vec.size(), 2);
@@ -136,6 +142,7 @@ void MainWindow::doFEMcalc(bool mode)
         //qDebug() << a(n3,n3) << a(n3,n1) << a(n3,n2);
     }
     //cout << a;
+
     //a.save("After.txt", arma_ascii);
     for(int i=0; i<nr_bcs; i++){
         double n = bcs(i,0);
@@ -144,6 +151,8 @@ void MainWindow::doFEMcalc(bool mode)
         a(n,n) = 1.0;
         f(n,0) = bcs(i,1);
     }
+
+
     //cout << bcs;
     for(int i=0; i<nr_nodes; i++){
         if(a(i,i)==0){
@@ -152,21 +161,113 @@ void MainWindow::doFEMcalc(bool mode)
             f(i,0) = 0.0;
         }
     }
-    a.save("Arrr.txt", arma_ascii);
+   // a.save("Arrr.txt", arma_ascii);
    // cout << a;
     //cout << "\n--------------\n";
    //cout << f;
     //cout << "\n--------------\n";
+    if (scene->calc_trs.size()==0)
+    {
    mat v;
     v = solve(mat(a),f);
   // cout << v;
     get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
-    if(!mode)
-        scene->get_tri2d_E(v, nr_nodes, nr_trs, nodes, trs);
-    else scene->show_mesh(v, nr_trs, nodes, trs);
+    }
+
+    if (scene->calc_trs.size()==1)
+    {
+        mat zone_trs;
+        zone_trs.clear();
+        zone_trs.set_size(scene->calc_trs.at(0).size()/3,3);
+        for (int i=0; i<scene->calc_trs.at(0).size()/3;i++){
+            zone_trs(i,0)=scene->calc_trs.at(0).at(3*i);
+            zone_trs(i,1)=scene->calc_trs.at(0).at(3*i+1);
+            zone_trs(i,2)=scene->calc_trs.at(0).at(3*i+2);
+        }
+        int nr_zone_trs=zone_trs.n_rows;
+        mat v;
+         v = solve(mat(a),f);
+       // cout << v;
+         get_tri2d_cap(v, nr_nodes, nr_zone_trs, nodes, zone_trs,domains);
+    }
+
+    if (scene->calc_trs.size()==2)
+    {
+        mat trs_1;
+        mat trs_2;
+        trs_1.clear();
+        trs_1.set_size(scene->calc_trs.at(0).size()/3,3);
+        for (int i=0; i<scene->calc_trs.at(0).size()/3;i++){
+            trs_1(i,0)=scene->calc_trs.at(0).at(3*i);
+            trs_1(i,1)=scene->calc_trs.at(0).at(3*i+1);
+            trs_1(i,2)=scene->calc_trs.at(0).at(3*i+2);
+        }
+        trs_2.clear();
+        trs_2.set_size(scene->calc_trs.at(1).size()/3,3);
+        for (int i=0; i<scene->calc_trs.at(1).size()/3;i++){
+            trs_2(i,0)=scene->calc_trs.at(1).at(3*i);
+            trs_2(i,1)=scene->calc_trs.at(1).at(3*i+1);
+            trs_2(i,2)=scene->calc_trs.at(1).at(3*i+2);
+        }
+        qDebug()<<"tut";
+        mat f1,f2;
+        f1=f;
+        f2=f;
+        for (int i=0; i<f.n_rows; i++)
+        {
+            if (scene->getMapData(i)==1)
+                f1(i,0)=0;
+            else if (scene->getMapData(i)==0)
+                f2(i,0)=0;
+        }
+       // cout << "\n--------------\n";
+       // cout << f1;
+       // cout << "\n--------------\n";
+         //       cout << f2;
+        mat v11,v22,v12;
+        v11 = solve(mat(a),f1);
+        v22 = solve(mat(a),f2);
+        v12 = solve(mat(a),f);
+        int nr_trs_1=trs_1.n_rows;
+        int nr_trs_2=trs_2.n_rows;
+        //qDebug()<<"c11'";
+        double W11,W12,W22;
+       W11 = get_tri2d_cap(v11, nr_nodes, nr_trs, nodes, trs,domains);
+        //qDebug()<<"c12";
+        //get_tri2d_cap(v1, nr_nodes, nr_trs_2, nodes, trs_2,domains);
+        //qDebug()<<"c21";
+        //get_tri2d_cap(v2, nr_nodes, nr_trs_1, nodes, trs_1,domains);
+      //  qDebug()<<"c22'";
+       W22 = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
+       W12 = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
+       double C11, C12, C22;
+       C11 = 2 * W11;
+       C22 = 2 * W22;
+       C12 = W12 - (C11+C22)/2;
+       mat C;
+       C.set_size(2,2);
+       C(0,0) = C11 + C12;
+       C(0,1) = C12;
+       C(1,0) = C12;
+       C(1,1) = C22 + C12;
+       qDebug()<<"****************************";
+       qDebug()<<
+       qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
+       qDebug()<<endl;
+       qDebug()<<C11<<", "<<C12;
+       qDebug()<<C12<<", "<<C22;
+       qDebug()<<endl;
+       cout<<C;
+       if(!mode)
+          scene->get_tri2d_E(v11, nr_nodes, nr_trs, nodes, trs);
+      else scene->show_mesh(v12, nr_trs, nodes, trs);
+
+    }
+
+
 
 }
-void MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs, mat domains)
+double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs, mat domains)
 {
     double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
     double mu0 = 4.0 * M_PI * pow(10.0, -7);
@@ -219,8 +320,7 @@ void MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, m
     qDebug() << "Z1 = " << Z1;
     text="C = "+QString::number(C);
     ui->textBrowser->setText(text);
-
-
+    return U;
 }
 
 void MainWindow::move_scene_slot(bool mode)
@@ -352,3 +452,52 @@ void MainWindow::pointszone_entered()
     }
 }
 
+
+void MainWindow::on_saveButton_clicked()
+{
+   /* QString fileName = QFileDialog::getSaveFileName(this,tr("Save file"));
+    if (fileName.isEmpty())
+             return;
+         else {
+             QFile file(fileName);
+             if (!file.open(QIODevice::WriteOnly)) {
+                 QMessageBox::information(this, tr("Unable to open file"),
+                     file.errorString());
+                 return;
+             }
+             QDataStream out(&file);
+                      out.setVersion(QDataStream::Qt_5_10);
+                      QVector<QList <QPointF> *> inside,outside,dielectric;
+                      inside = scene->getInside();
+                      outside = scene->getOutside();
+                      dielectric = scene->getDielectric();
+                      out<<inside<<outside<<dielectric;
+    }*/
+}
+
+void MainWindow::on_loadButton_clicked()
+{
+   /* QString fileName = QFileDialog::getOpenFileName(this,
+             tr("Open Address Book"), "",
+             tr("Address Book (*.abk);;All Files (*)"));
+    if (fileName.isEmpty())
+            return;
+        else {
+
+            QFile file(fileName);
+
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::information(this, tr("Unable to open file"),
+                    file.errorString());
+                return;
+            }
+            QDataStream in(&file);
+            in.setVersion(QDataStream::Qt_5_10);
+            QVector<QList <QPointF> *> inside,outside,dielectric;
+            in >> inside>>outside>>dielectric;
+            scene->SetInside(inside);
+            scene->SetOutside(outside);
+            scene->SetDielectric(dielectric);
+            scene->drawLoad();
+    }*/
+}

@@ -11,6 +11,7 @@
 #include "rectdetails.h"
 #include "circledetails.h"
 #include "pointszone.h"
+#include <QPainter>
 using namespace arma;
 // нажимаем new,
 // галочкой ставим режим
@@ -257,6 +258,20 @@ void GraphicScene::mouseReleaseEvent(QGraphicsSceneMouseEvent * me)
     }
 }
 
+void GraphicScene::drawLoad()
+{
+    QPen red(Qt::red,Qt::DashLine);
+    QPen blue(Qt::blue,Qt::DashLine);
+    QPen green(Qt::green);
+    for( int i=0; i<inside_points.size(); ++i )
+    {
+        for(int j=1; j<inside_points.at(i)->size();j++)
+       this->addLine(inside_points.at(i)->at(j-1).x(),inside_points.at(i)->at(j).x(),inside_points.at(i)->at(j-1).y(),inside_points.at(i)->at(j).y(),red);
+        this->addLine(inside_points.at(i)->at(inside_points.at(i)->size()-1).x(),inside_points.at(i)->at(0).x(),inside_points.at(i)->at(inside_points.at(i)->size()-1).y(),inside_points.at(i)->at(0).y(),red);
+    }
+
+}
+
 void GraphicScene::drawFinalRect()
 {
     //qDebug () << "here";
@@ -281,9 +296,12 @@ void GraphicScene::drawFinalRect()
         rect->setPen(red_pen);
         outside_points.push_back(temp_points);
     }
-    else {
+    else if(rectDet->getStatus()==2) {
         rect->setPen(green_pen);
         dielectric_points.push_back(temp_points);
+    }
+    else {
+        calczone_points.push_back(temp_points);
     }
     rectDet->hide();
 }
@@ -637,6 +655,7 @@ void GraphicScene::doTriangles()
         y_p->setDefaultTextColor(Qt::black);
         y_p->setPos(0, j);
     }
+    qDebug()<<"1";
     Fade_2D dt;
     //qDebug() << dt.setNumCPU(1);
 
@@ -659,6 +678,7 @@ void GraphicScene::doTriangles()
             }
         }
     }
+     qDebug()<<"2";
     if(outside_points.size()>0){ // redo
         for(int j =0; j<outside_points.size(); j++){
             for( int i=0; i<outside_points.at(j)->count(); ++i )
@@ -673,6 +693,7 @@ void GraphicScene::doTriangles()
             }
         }
     }
+     qDebug()<<"3";
     /*for( int i=0; i<m_points.count(); ++i )
     {
             if(i==m_points.count()-1){
@@ -694,6 +715,7 @@ void GraphicScene::doTriangles()
         }
         all_Outside_points.push_back(vPoints1);
     }
+     qDebug()<<"4";
     for (int i=0;i<dielectric_points.size();i++)
     {
         std::vector<Point2> vPoints1;
@@ -704,13 +726,13 @@ void GraphicScene::doTriangles()
         }
         all_Outside_points.push_back(vPoints1);
     }
-
+     qDebug()<<"5";
 
     for (int i; i<all_Outside_points.size();i++)
     {
     dt.insert(all_Outside_points[i]);
     }
-
+     qDebug()<<"6";
 
     QVector<std::vector <Point2>> all_Inside_points;
     for( int i=0; i<inside_points.size(); ++i )
@@ -724,7 +746,7 @@ void GraphicScene::doTriangles()
         }
         all_Inside_points.push_back(vPoints2);
     }
-
+     qDebug()<<"7";
 
 
     QVector<std::vector<Segment2>> all_outside_vSegments1;
@@ -742,6 +764,7 @@ void GraphicScene::doTriangles()
     }
        // qDebug() <<all_outside_vSegments1.size();
     //tut
+     qDebug()<<"8";
     QVector<std::vector<Segment2>> all_inside_vSegments2;
     for(int i = 0; i<all_Inside_points.size(); i++){
         std::vector<Segment2> vSegments2;
@@ -754,7 +777,7 @@ void GraphicScene::doTriangles()
         }
         all_inside_vSegments2.push_back(vSegments2);
     }
-
+     qDebug()<<"9";
 
     ConstraintGraph2* pCG1(NULL);
 
@@ -766,31 +789,32 @@ void GraphicScene::doTriangles()
         pCG1=dt.createConstraint(all_outside_vSegments1[i],CIS_CONSTRAINED_DELAUNAY);
         all_outsideZone.push_back((dt.createZone(pCG1,ZL_INSIDE)));
     }
-
+     qDebug()<<"10";
     Zone2* outsideSumZone = all_outsideZone[0];
     for (int i = 1; i<all_outsideZone.size();i++)
     {
         outsideSumZone = zoneUnion(outsideSumZone,all_outsideZone[i]);
     }
-
+     qDebug()<<"11";
     QVector<Zone2*> all_insideZone;
     for(int i =0; i<all_inside_vSegments2.size(); i++){
         ConstraintGraph2* pCG2(NULL);
         pCG2=dt.createConstraint(all_inside_vSegments2[i],CIS_CONSTRAINED_DELAUNAY);
         all_insideZone.push_back((dt.createZone(pCG2,ZL_INSIDE)));
     }
+     qDebug()<<"12";
     Zone2* insideSumZone = all_insideZone[0];
     for(int i = 1; i<all_insideZone.size(); i++){
         insideSumZone = zoneUnion(insideSumZone, all_insideZone[i]);
     }
     dt.applyConstraintsAndZones();
-
+     qDebug()<<"13";
     Zone2* iZone(zoneDifference(outsideSumZone,insideSumZone));
     Zone2* pZone(iZone->convertToBoundedZone());
     MeshGenParams params(pZone);
     //std::cout << minAngle << minEdgeLen << maxEdgeLen  << std::endl;
     dt.refine(pZone,minAngle,minEdgeLen,maxEdgeLen,true); // max should be max 1/3 of max
-
+     qDebug()<<"14";
     //std::vector<Triangle2*> vZoneT;
     vZoneT.clear();
     pZone->getTriangles(vZoneT);
@@ -805,6 +829,7 @@ void GraphicScene::doTriangles()
     //qDebug() << dt.numberOfTriangles();
     emit send_triangles(dt.numberOfTriangles());
     //qDebug() << inside_points.size() << outside_points.size();
+     qDebug()<<"15";
     for(size_t i=0;i<vZoneT.size();++i)
     {
         for(int j=0; j<3; j++){
@@ -1000,13 +1025,61 @@ void GraphicScene::doTriangles()
         }
         rez=0;
     }
-    for (int i=0; i<domains.size(); i++)
+    /*for (int i=0; i<domains.size(); i++)
     {
         if (domains.at(i).second==2)
         {
             qDebug()<<domains.at(i);
         }
-    }
+    }*/
     // //////////////////////////////////////////////////////////////////////////////////
+
+    // Узлы в зоне расчета /////////////////////////////////////////////////////////////
+    for (int i=0;i<calczone_points.size();i++)
+    {
+        for (int j=0;j<nodes_vec.size();j++)
+        {
+            if(nodes_vec.at(j).first>=calczone_points.at(i)->at(0).x() && nodes_vec.at(j).first<=calczone_points.at(i)->at(1).x())
+            {
+                if (nodes_vec.at(j).second<=calczone_points.at(i)->at(3).y() && nodes_vec.at(j).second>=calczone_points.at(i)->at(0).y())
+                    calczone_nodes.push_back(nodes_vec.at(j));
+            }
+           // calcpoints.push_back(calc_zone_points);
+
+        }
+
+    for(int k=0;k<trs_vec.size()/3; k++){
+        bool inside=false;
+    for (int j=0;j<calczone_nodes.size();j++)
+    {
+        if (nodes_vec.at(trs_vec.at(3*k))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+        else if (nodes_vec.at(trs_vec.at(3*k+1))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+        else if (nodes_vec.at(trs_vec.at(3*k+2))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+    }
+    if (inside==true)
+    {
+    calczone_trs.push_back(trs_vec.at(3*k));
+    calczone_trs.push_back(trs_vec.at(3*k+1));
+    calczone_trs.push_back(trs_vec.at(3*k+2));
+    }
+    }
+    calc_trs.push_back(calczone_trs);
+    calczone_nodes.clear();
+    calczone_trs.clear();
+    }
+    //qDebug()<<map;
+
+
+
+
 }
 

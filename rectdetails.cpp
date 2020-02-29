@@ -37,6 +37,7 @@ void rectDetails::on_chargedButt_clicked()
 {
     ui->groundedButt->setChecked(false);
     ui->dielectricButton->setChecked(false);
+    ui->calcButton->setChecked(false);
     gr_checked = 1;
 }
 
@@ -44,6 +45,7 @@ void rectDetails::on_groundedButt_clicked()
 {
     ui->chargedButt->setChecked(false);
     ui->dielectricButton->setChecked(false);
+    ui->calcButton->setChecked(false);
     gr_checked = 0;
 }
 
@@ -56,6 +58,14 @@ void rectDetails::on_dielectricButton_clicked()
 {
     ui->groundedButt->setChecked(false);
     ui->chargedButt->setChecked(false);
+    ui->calcButton->setChecked(false);
     gr_checked = 2;
+}
 
+void rectDetails::on_calcButton_clicked()
+{
+    ui->groundedButt->setChecked(false);
+    ui->chargedButt->setChecked(false);
+    ui->dielectricButton->setChecked(false);
+    gr_checked = 3;
 }

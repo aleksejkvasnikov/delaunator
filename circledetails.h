@@ -34,6 +34,7 @@ private slots:
 
     void on_dielectricButton_clicked();
 
+
 private:
     Ui::circledetails *ui;
     int pointNumber = 30;

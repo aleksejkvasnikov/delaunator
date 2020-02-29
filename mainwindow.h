@@ -19,7 +19,7 @@ public:
     ~MainWindow();
     GraphicScene *scene;
     PointsZone *pointszone;
-    void get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs,mat domains);
+    double get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs,mat domains);
 private:
     Ui::MainWindow *ui;
 
@@ -42,6 +42,8 @@ private slots:
     void on_make_1_button_clicked();
     void on_showMesh_button_clicked();
     void pointszone_entered();
+    void on_saveButton_clicked();
+    void on_loadButton_clicked();
 };
 
 #endif // MAINWINDOW_H
