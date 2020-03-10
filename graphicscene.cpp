@@ -504,6 +504,7 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
         QPen pen(Qt::black);
         this->addPolygon(poly, pen, interpolate(E_mag(i,0), E_mag.max()));
         QBrush brush(Qt::red);
+
     }
 
 }
@@ -512,9 +513,19 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
 {
     //cout << v;
     double max = 0;
+    double vmax;
+    double vmin;
+    double vmid;
+    QPointF Pmax, Pmin,Pmid;
     for (int i=0; i<nr_trs; i++){
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
-        if((v(n1)+v(n2)+v(n3)/3) > max) max = (v(n1)+v(n2)+v(n3)/3);
+      //  if((v(n1)+v(n2)+v(n3)/3) > max) max = (v(n1)+v(n2)+v(n3)/3);
+        if (v(n1)>max)
+            max = v(n1);
+        else if (v(n2)>max)
+            max = v(n2);
+        else if (v(n3)>max)
+            max = v(n3);
     }
 
     for (int i=0; i<nr_trs; i++){
@@ -523,19 +534,60 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
         QPolygonF poly;
         poly << QPointF(nds(n1,0), nds(n1,1)) << QPointF(nds(n2,0), nds(n2,1)) << QPointF(nds(n3,0), nds(n3,1))<< QPointF(nds(n1,0), nds(n1,1));
         QPen pen(Qt::black);
-        this->addPolygon(poly, pen, interpolate(((v(n1)+v(n2)+v(n3)/3)), max));
+        // /////////////////////////////////////////
+        if (v(n1)>=v(n2) && v(n1)>=v(n3))
+            vmax = n1;
+        else if (v(n2)>=v(n1) && v(n2)>=v(n3))
+            vmax = n2;
+        else if (v(n3)>=v(n1) && v(n3)>=v(n1))
+            vmax = n3;
+
+        if (v(n1)<=v(n2) && v(n1)<=v(n3))
+            vmin = n1;
+        else if (v(n2)<=v(n1) && v(n2)<=v(n3))
+            vmin = n2;
+        else if (v(n3)<=v(n1) && v(n3)<=v(n1))
+            vmin = n3;
+
+        if (n1!=vmax && n1!=vmin){
+            vmid = n1;
+        }
+        else if (n2!=vmax && n2!=vmin){
+            vmid = n2;
+        }
+        else if (n3!=vmax && n3!=vmin){
+            vmid = n3;
+        }
+
+
+        Pmax.setX(nds(vmax,0));
+        Pmax.setY(nds(vmax,1));
+
+        Pmin.setX(nds(vmin,0));
+        Pmin.setY(nds(vmin,1));
+
+        Pmid.setX(nds(vmid,0));
+        Pmid.setY(nds(vmid,1));
+
+        QLinearGradient grad(Pmin, Pmax);
+        grad.setColorAt(0,interpolate1(v(vmin),max));
+        //grad.setColorAt(0.5,interpolate1(v(vmid),max));
+        grad.setColorAt(1,interpolate1(v(vmax),max));
+        // ///////////////////////////////////////
+        this->addPolygon(poly, pen, grad);
         //qDebug() << abs((v(n1)+v(n2)+v(n3)/3))/v.max();
-        QBrush brush(Qt::red);
+       // QBrush brush(Qt::red);
     }
 }
 QColor GraphicScene::interpolate(double value, double max){
-    if(value <0) value = 0;
+    //if(value <0) value = 0;
     double ratio = value/max;
     QColor start = Qt::red;
     QColor end = Qt::blue;
     int r = (int)(ratio*start.red() + (1-ratio)*end.red());
     int g = (int)(ratio*start.green() + (1-ratio)*end.green());
     int b = (int)(ratio*start.blue() + (1-ratio)*end.blue());
+   // qDebug()<<start.green()<<"  "<<end.green();
     return QColor::fromRgb(r,g,b);
 }
 QColor GraphicScene::interpolate1(double ratio, double max)

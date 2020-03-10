@@ -29,14 +29,14 @@
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Точка</string>
+            <string>Point</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="rectButton">
            <property name="text">
-            <string>Прямоугольник</string>
+            <string>Rect</string>
            </property>
           </widget>
          </item>
@@ -46,7 +46,7 @@
             <bool>true</bool>
            </property>
            <property name="text">
-            <string>Круг</string>
+            <string>Circle</string>
            </property>
           </widget>
          </item>
@@ -60,7 +60,7 @@
          <item>
           <widget class="QPushButton" name="pushButton_3">
            <property name="text">
-            <string>Очистить</string>
+            <string>Clear</string>
            </property>
           </widget>
          </item>
@@ -76,12 +76,15 @@
          <item>
           <widget class="QPushButton" name="femCalc">
            <property name="text">
-            <string>Show1</string>
+            <string>Calculation</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="showMesh_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Show2</string>
            </property>
@@ -133,14 +136,14 @@
          <item>
           <widget class="QPushButton" name="pushButton_4">
            <property name="text">
-            <string>Триангулировать</string>
+            <string>Triangulate</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_8">
            <property name="text">
-            <string>Добавить точки </string>
+            <string>Add Points</string>
            </property>
           </widget>
          </item>

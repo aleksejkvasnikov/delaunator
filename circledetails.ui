@@ -64,7 +64,7 @@
    <item row="5" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Conductor</string>
+      <string>Structure Setting</string>
      </property>
     </widget>
    </item>

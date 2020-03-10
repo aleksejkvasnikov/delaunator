@@ -173,6 +173,8 @@ void MainWindow::doFEMcalc(bool mode)
   // cout << v;
     get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
     qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
+
+    scene->show_mesh(v, nr_trs, nodes, trs);
     }
 
     if (scene->calc_trs.size()==1)
@@ -190,8 +192,11 @@ void MainWindow::doFEMcalc(bool mode)
          v = solve(mat(a),f);
        // cout << v;
          get_tri2d_cap(v, nr_nodes, nr_zone_trs, nodes, zone_trs,domains);
+        scene->show_mesh(v, nr_trs, nodes, trs);
+    /*if(!mode)
+              scene->get_tri2d_E(v, nr_nodes, nr_trs, nodes, trs);
+          else scene->show_mesh(v, nr_trs, nodes, trs);*/
     }
-
     if (scene->calc_trs.size()==2)
     {
         mat trs_1;
@@ -252,17 +257,15 @@ void MainWindow::doFEMcalc(bool mode)
        C(1,0) = C12;
        C(1,1) = C22 + C12;
        qDebug()<<"****************************";
-<<<<<<< HEAD
-       qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
-=======
-      // qDebug()<<
->>>>>>> 7d963a9ddeee95f8bbcf76ef2c39e00a6122e53d
        qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
        qDebug()<<endl;
        qDebug()<<C11<<", "<<C12;
        qDebug()<<C12<<", "<<C22;
        qDebug()<<endl;
        cout<<C;
+       ui->textBrowser->setText("C=|"+QString::number(C11)+"  "+QString::number(C12)+"|");
+       ui->textBrowser->append("    |"+QString::number(C12)+"  "+QString::number(C22)+"|");
+       ui->textBrowser->append("trs["+QString::number(nr_trs)+"]  nodes["+QString::number(nr_nodes)+"]");
       /* if(!mode)
           scene->get_tri2d_E(v11, nr_nodes, nr_trs, nodes, trs);
       else scene->show_mesh(v12, nr_trs, nodes, trs);
