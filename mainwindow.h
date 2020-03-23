@@ -20,6 +20,8 @@ public:
     GraphicScene *scene;
     PointsZone *pointszone;
     double get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs,mat domains);
+    mat bcs_F, nodes_F, trs_F, domains_F,v_F,matrix_C;
+    double C_F,nr_nodes_F,nr_trs_F,nr_trs_it=0,del,del1,del2;
 private:
     Ui::MainWindow *ui;
 
@@ -44,6 +46,14 @@ private slots:
     void pointszone_entered();
     void on_saveButton_clicked();
     void on_loadButton_clicked();
+    void on_ReMesh_clicked();
+    void RefinementTRS(double nr_trs, double nr_nds);
+    void on_showE_button_clicked();
+    void result_text(double C_F, double nr_trs_F,double nr_nodes_F);
+    void result_text(mat matrix_C,double nr_trs_F,double nr_nodes_F);
+    void on_pushButton_5_clicked();
+
+    void on_Rect_Mesh_button_clicked();
 };
 
 #endif // MAINWINDOW_H

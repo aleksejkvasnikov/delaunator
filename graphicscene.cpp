@@ -52,7 +52,7 @@ GraphicScene::GraphicScene(QObject *parent) :
 {
     //outside_points = new QVector<QList <QPointF> *>;
     //inside_points = new QVector<QList <QPointF> *>;
-    this->setBackgroundBrush(Qt::gray);
+    this->setBackgroundBrush(Qt::lightGray);
 
     QPen penZero(Qt::darkGreen, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     QPen penLine(Qt::darkGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -297,6 +297,7 @@ void GraphicScene::drawLoad()
 
 void GraphicScene::drawFinalRect()
 {
+
     //qDebug () << "here";
     QGraphicsRectItem * rect = this->addRect(rectDet->getMinX(), rectDet->getMinY(), rectDet->getMaxX(), rectDet->getMaxY());
     rect->setBrush(Qt::transparent);
@@ -487,13 +488,14 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
         E_x(i,0) = v(n1, 0)*b1 + v(n2,0)*b2 + v(n3, 0)*b3;
         E_y(i,0) = v(n1, 0)*c1 + v(n2,0)*c2 + v(n3, 0)*c3;
         E_mag(i,0) = pow(E_x(i, 0), 2) + pow(E_y(i,0), 2);
+
        // qDebug () << E_mag(i,0);
     }
     double E_peak = sqrt(E_mag.max());
     //qDebug () << E_peak;
     E_mag = sqrt(E_mag/E_mag.max());
-    E_x = abs(E_x)/E_x.max();
-    E_y = abs(E_y)/E_y.max();
+   // E_x = (E_x)/E_x.max();
+  //  E_y = (E_y)/E_y.max();
 
 
     for (int i=0; i<nr_trs; i++){
@@ -501,22 +503,50 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
         //qDebug() << n1 << n2 << n3 << E_mag(i,0)/E_mag.max();
         QPolygonF poly;
         poly << QPointF(nds(n1,0), nds(n1,1)) << QPointF(nds(n2,0), nds(n2,1)) << QPointF(nds(n3,0), nds(n3,1))<< QPointF(nds(n1,0), nds(n1,1));
-        QPen pen(Qt::black);
-        this->addPolygon(poly, pen, interpolate(E_mag(i,0), E_mag.max()));
+        QPen pen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        this->addPolygon(poly, Qt::NoPen, interpolate1(E_mag(i,0), E_mag.max()));
         QBrush brush(Qt::red);
+    }
 
+        for (int i=0; i<nr_trs; i++){ //постоение линий
+            double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
+        double x0,y0,xn,yn;
+        QPen pen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        x0=(nds(n1,0)+nds(n2,0)+nds(n3,0))/3;
+        y0=(nds(n1,1)+nds(n2,1)+nds(n3,1))/3;
+        qDebug()<<E_x(i,0)<<"   "<<E_y(i,0);
+        xn=x0-E_x(i,0)/E_x.max();
+        yn=y0-E_y(i,0)/E_x.max();
+        double ostr = 0.25;        // острота стрелки
+        this->addLine(x0, y0, xn, yn, pen);
+        double x,y,lons,ugol;
+        double f1x2 , f1y2;
+        x = xn - x0;
+        y = yn - y0;
+
+        lons = sqrt(x*x + y*y) / 7;     // длина лепестков % от длины стрелки
+        ugol = atan2(y, x);             // угол наклона линии
+
+        //lons = 12;
+
+        f1x2 = xn - lons * cos(ugol - ostr);
+        f1y2 = yn - lons * sin(ugol - ostr);
+
+        this->addLine(xn, yn, f1x2, f1y2,pen);
+
+        f1x2 = xn - lons * cos(ugol + ostr);
+        f1y2 = yn - lons * sin(ugol + ostr);
+
+        this->addLine(xn, yn, f1x2, f1y2,pen);
     }
 
 }
 
-void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
+void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs, double K)
 {
     //cout << v;
     double max = 0;
-    double vmax;
-    double vmin;
-    double vmid;
-    QPointF Pmax, Pmin,Pmid;
+
     for (int i=0; i<nr_trs; i++){
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
       //  if((v(n1)+v(n2)+v(n3)/3) > max) max = (v(n1)+v(n2)+v(n3)/3);
@@ -529,24 +559,28 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
     }
 
     for (int i=0; i<nr_trs; i++){
+        double vmax;
+        double vmin;
+        double vmid;
+        QPointF Pmax, Pmin,Pmid;
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         //qDebug() << n1 << n2 << n3 << E_mag(i,0)/E_mag.max();
         QPolygonF poly;
         poly << QPointF(nds(n1,0), nds(n1,1)) << QPointF(nds(n2,0), nds(n2,1)) << QPointF(nds(n3,0), nds(n3,1))<< QPointF(nds(n1,0), nds(n1,1));
-        QPen pen(Qt::black);
+        QPen pen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         // /////////////////////////////////////////
         if (v(n1)>=v(n2) && v(n1)>=v(n3))
             vmax = n1;
         else if (v(n2)>=v(n1) && v(n2)>=v(n3))
             vmax = n2;
-        else if (v(n3)>=v(n1) && v(n3)>=v(n1))
+        else if (v(n3)>=v(n1) && v(n3)>=v(n2))
             vmax = n3;
 
         if (v(n1)<=v(n2) && v(n1)<=v(n3))
             vmin = n1;
         else if (v(n2)<=v(n1) && v(n2)<=v(n3))
             vmin = n2;
-        else if (v(n3)<=v(n1) && v(n3)<=v(n1))
+        else if (v(n3)<=v(n1) && v(n3)<=v(n2))
             vmin = n3;
 
         if (n1!=vmax && n1!=vmin){
@@ -560,6 +594,10 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
         }
 
 
+
+        //qDebug()<< v(n1) << v(n2) << v(n3);
+        //qDebug()<< v(vmax) << v(vmin) << v(vmid);
+
         Pmax.setX(nds(vmax,0));
         Pmax.setY(nds(vmax,1));
 
@@ -569,15 +607,68 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs)
         Pmid.setX(nds(vmid,0));
         Pmid.setY(nds(vmid,1));
 
-        QLinearGradient grad(Pmin, Pmax);
-        grad.setColorAt(0,interpolate1(v(vmin),max));
+        //cout << v(vmax) <<"\t" << v(vmid) << "\t" <<v(vmin);
+        double maxV,midV,minV;
+        maxV=v(vmax);
+        midV=v(vmid);
+        minV=v(vmin);
+      //  qDebug()<<maxV<<midV<<minV;
+
+        if (maxV==midV)
+        {
+            Pmax.setX(nds(vmax,0)+nds(vmid,0)/2);
+            Pmax.setY(nds(vmax,1)+nds(vmid,1)/2);
+            QLinearGradient grad(Pmin, Pmax);
+            grad.setColorAt(0,interpolate1(v(vmin),max));
+            grad.setColorAt(1,interpolate1(v(vmax),max));
+            this->addPolygon(poly, Qt::NoPen, grad);
+        }
+        else if (minV==midV)
+        {
+            Pmin.setX(nds(vmin,0)+nds(vmid,0)/2);
+            Pmin.setY(nds(vmin,1)+nds(vmid,1)/2);
+            QLinearGradient grad(Pmin, Pmax);
+            grad.setColorAt(0,interpolate1(v(vmin),max));
+            grad.setColorAt(1,interpolate1(v(vmax),max));
+            this->addPolygon(poly, Qt::NoPen, grad);
+        }
+        else {
+            QPen pen1(Qt::white);
+           QPointF Pmidgrad = calcMidGradPoint(Pmax,Pmin,v(vmax),v(vmid));
+           double Amin,Amax,k;
+           Amin = sqrt(pow((Pmidgrad.x()-Pmin.x()),2)+pow((Pmidgrad.y()-Pmin.y()),2));
+           Amax = sqrt(pow((Pmax.x()-Pmin.x()),2)+pow((Pmax.y()-Pmin.y()),2));
+           k=Amin/Amax;
+           if (k>=1)
+           {
+               k=1;
+           }
+           QLinearGradient grad(Pmin,Pmax);
+           grad.setColorAt(0,interpolate1(v(vmin),max));
+           grad.setColorAt(k,interpolate1(v(vmid),max));
+           grad.setColorAt(1,interpolate1(v(vmax),max));
+           this->addPolygon(poly,Qt::NoPen,grad);
+         //  this->addLine(Pmid.x(),Pmid.y(),Pmidgrad.x(),Pmidgrad.y(),pen1);
+
+        }
+
+
+        if (abs(v(n1)-v(n2))>K || abs(v(n2)-v(n3))>K || abs(v(n1)-v(n3))>K)
+        {
+            this->addPolygon(poly,pen,Qt::white);
+        }
+
+        //QLinearGradient grad(Pmin, Pmax);
+        //grad.setColorAt(0,interpolate1(v(vmin),max));
         //grad.setColorAt(0.5,interpolate1(v(vmid),max));
-        grad.setColorAt(1,interpolate1(v(vmax),max));
+        //grad.setColorAt(1,interpolate1(v(vmax),max));
         // ///////////////////////////////////////
-        this->addPolygon(poly, pen, grad);
+       // this->addPolygon(poly, pen, grad);
         //qDebug() << abs((v(n1)+v(n2)+v(n3)/3))/v.max();
        // QBrush brush(Qt::red);
     }
+
+
 }
 QColor GraphicScene::interpolate(double value, double max){
     //if(value <0) value = 0;
@@ -595,37 +686,37 @@ QColor GraphicScene::interpolate1(double ratio, double max)
     int r , g ,b;
     if (ratio<0) ratio=0;
     double val = ratio/max;
-    qDebug() << ratio << max << ratio/max;
+    //qDebug() << ratio << max << ratio/max;
     if(val>=0 && val <0.2){
-         qDebug () << 1;
+        // qDebug () << 1;
          QColor start = Qt::cyan;  QColor mid = Qt::blue;
          r = (int)(val*start.red() + (1-val)*mid.red());
          g = (int)(val*start.green() + (1-val)*mid.green());
          b = (int)(val*start.blue() + (1-val)*mid.blue());
     }
     else if(val>=0.2 && val <0.4){
-        qDebug () << 2;
+       // qDebug () << 2;
          QColor start = Qt::green;  QColor mid = Qt::cyan;
          r = (int)(val*start.red() + (1-val)*mid.red());
          g = (int)(val*start.green() + (1-val)*mid.green());
          b = (int)(val*start.blue() + (1-val)*mid.blue());
     }
     else if(val>=0.4 && val <0.6){
-        qDebug () << 3;
+      //  qDebug () << 3;
          QColor start = Qt::yellow;  QColor mid = Qt::green;
          r = (int)(val*start.red() + (1-val)*mid.red());
          g = (int)(val*start.green() + (1-val)*mid.green());
          b = (int)(val*start.blue() + (1-val)*mid.blue());
     }
     else if(val>=0.6 && val <0.8){
-        qDebug () << 4;
+     //   qDebug () << 4;
          QColor start = QColor( 0xFF, 0xA0, 0x00 );  QColor mid = Qt::yellow;
          r = (int)(val*start.red() + (1-val)*mid.red());
          g = (int)(val*start.green() + (1-val)*mid.green());
          b = (int)(val*start.blue() + (1-val)*mid.blue());
     }
     else if(val>=0.8 && val <=1){
-        qDebug () << 5;
+     //   qDebug () << 5;
          QColor start =  Qt::red;  QColor mid =QColor( 0xFF, 0xA0, 0x00 );
          r = (int)(val*start.red() + (1-val)*mid.red());
          g = (int)(val*start.green() + (1-val)*mid.green());
@@ -703,6 +794,623 @@ void GraphicScene::fullRecalc()
 void GraphicScene::EnterPointsZone()
 {
     pointszone->show();
+}
+
+QPointF GraphicScene::calcMidGradPoint(QPointF Pmax, QPointF Pmin, double vmax,double vmid) // нахождение точки середины градиента
+{
+        double x1,y1,x2,y2,x0,y0,k,k1,L;
+        x1 = Pmax.x(); y1 = Pmax.y();
+        x2 = Pmin.x(); y2 = Pmin.y();
+        k=vmid/vmax;
+        k1=1-k;
+        L=k1/k;
+       // qDebug() << k1 << k;
+        x0 = (x1 + L * x2)/(1 + L);
+        y0 = (y1 + L * y2)/(1 + L);
+
+        QPointF MidGradPoint(x0,y0);
+        return MidGradPoint;
+}
+
+void GraphicScene::RefinementMesh(mat trs, mat v, mat nds, double K) //уточнение сетки
+{
+    bcs_vec.clear(); nodes_vec.clear(); trs_vec.clear();
+    this->clear();
+    QGraphicsTextItem *zero_p = this->addText("0");
+    zero_p->setDefaultTextColor(Qt::red);
+    zero_p->setPos(0, 0);
+    QPen penZero(Qt::darkGreen, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penLine(Qt::darkGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    this->addLine(-3600, 0, 3600, 0, penZero);
+    this->addLine(0, -1800, 0, 1800, penZero);
+    for(int j=-100; j<100; j++){
+        this->addLine(-3600, (j*10), 3600, (j*10), penLine);
+        this->addLine((j*10), -1800, (j*10), 1800, penLine);
+       // this->addLine(-160+(j*5), -2000, -160+(j*5), 1000);
+    }
+    for(int j=-3600; j<3600; j=j+50){
+        QGraphicsTextItem *x_p = this->addText(QString::number(j));
+        x_p->setDefaultTextColor(Qt::black);
+        x_p->setPos(j, 0);
+
+        QGraphicsTextItem *y_p = this->addText(QString::number(j*-1));
+        y_p->setDefaultTextColor(Qt::black);
+        y_p->setPos(0, j);
+    }
+
+
+    QPen pen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QVector<QList<QPointF>> temp_trs;
+    double nr_trs = trs.n_rows;
+    double nr_nds = nds.n_rows;
+    for (int i = 0; i<nr_trs; i++)
+    {
+        double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
+        if (abs(v(n1)-v(n2))>K || abs(v(n2)-v(n3))>K || abs(v(n3)-v(n1))>K)
+        {
+           QPointF p1,p2,p3,p12,p23,p31;
+            p1.setX(nds(n1,0));
+            p1.setY(nds(n1,1));
+            p2.setX(nds(n2,0));
+            p2.setY(nds(n2,1));
+            p3.setX(nds(n3,0));
+            p3.setY(nds(n3,1));
+            p12.setX((nds(n1,0)+nds(n2,0))/2);
+            p12.setY((nds(n1,1)+nds(n2,1))/2);
+            p23.setX((nds(n2,0)+nds(n3,0))/2);
+            p23.setY((nds(n2,1)+nds(n3,1))/2);
+            p31.setX((nds(n1,0)+nds(n3,0))/2);
+            p31.setY((nds(n1,1)+nds(n3,1))/2);
+
+            QList<QPointF> tempList;
+            tempList.push_back(p1);
+            tempList.push_back(p12);
+            tempList.push_back(p31);
+            temp_trs.push_back(tempList);
+            tempList.clear();
+
+            tempList.push_back(p12);
+            tempList.push_back(p2);
+            tempList.push_back(p23);
+            temp_trs.push_back(tempList);
+            tempList.clear();
+
+            tempList.push_back(p23);
+            tempList.push_back(p3);
+            tempList.push_back(p31);
+            temp_trs.push_back(tempList);
+            tempList.clear();
+
+            tempList.push_back(p31);
+            tempList.push_back(p12);
+            tempList.push_back(p23);
+            temp_trs.push_back(tempList);
+            tempList.clear();
+        }
+        else {
+            QPointF p1,p2,p3;
+            p1.setX(nds(n1,0));
+            p1.setY(nds(n1,1));
+            p2.setX(nds(n2,0));
+            p2.setY(nds(n2,1));
+            p3.setX(nds(n3,0));
+            p3.setY(nds(n3,1));
+            QList<QPointF> tempList;
+            tempList.push_back(p1);
+            tempList.push_back(p2);
+            tempList.push_back(p3);
+            temp_trs.push_back(tempList);
+        }
+     }
+    int k=0;
+    nodes_vec.clear();
+    trs_vec.clear();
+    bcs_vec.clear();
+    nodesD.clear();
+    trsD.clear();
+    nodesD.set_size(temp_trs.size()*3, 2);
+    trsD.set_size(temp_trs.size(),3);
+    domains.clear();
+    calc_trs.clear();
+    calczone_nodes.clear();
+    calczone_trs.clear();
+
+
+
+    for(int i=0;i<temp_trs.size();++i)
+    {
+        for(int j=0; j<3; j++){
+            if(nodes_vec.indexOf(std::make_pair(temp_trs.at(i).at(j).x(),temp_trs.at(i).at(j).y()))==-1){
+                nodes_vec.push_back(std::make_pair(temp_trs.at(i).at(j).x(), temp_trs.at(i).at(j).y()));
+                trs_vec.push_back(k);
+
+                for( int z=0; z<outside_points.size(); ++z )
+                {
+                    for( int q=0; q<outside_points.at(z)->count(); ++q )
+                    {
+                        double x1,x2,y1,y2;
+                        if(q<outside_points.at(z)->count()-1){
+                                x1 = outside_points.at(z)->at(q).x();
+                                x2 = outside_points.at(z)->at(q+1).x();
+                                y1 = outside_points.at(z)->at(q).y();
+                                y2 = outside_points.at(z)->at(q+1).y();
+
+                        } else {
+                                x1 = outside_points.at(z)->at(q).x();
+                                x2 = outside_points.at(z)->at(0).x();
+                                y1 = outside_points.at(z)->at(q).y();
+                                y2 = outside_points.at(z)->at(0).y();
+                        }
+                        double x = temp_trs.at(i).at(j).x();
+                        double y = temp_trs.at(i).at(j).y();
+                        double t = ((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/
+                                (pow((x2-x1),2)+pow((y2-y1),2));
+                        if(t<0) t=0;
+                        else if(t>1) t = 1;
+
+                        double l = sqrt(pow(x1 - x + (x2-x1)*t,2) +
+                                        pow(y1 - y + (y2-y1)*t,2));
+
+                        if(l<1)
+                        {
+                            bcs_vec.push_back(std::make_pair(k,0));
+                            break;
+                        }
+
+                    }
+                }
+                for( int z=0; z<inside_points.size(); ++z )
+                {
+                    for( int q=0; q<inside_points.at(z)->count(); ++q )
+                    {
+                        double x1,x2,y1,y2;
+                        if(q<inside_points.at(z)->count()-1){
+                                x1 = inside_points.at(z)->at(q).x();
+                                x2 = inside_points.at(z)->at(q+1).x();
+                                y1 = inside_points.at(z)->at(q).y();
+                                y2 = inside_points.at(z)->at(q+1).y();
+                        } else {
+                                x1 = inside_points.at(z)->at(q).x();
+                                x2 = inside_points.at(z)->at(0).x();
+                                y1 = inside_points.at(z)->at(q).y();
+                                y2 = inside_points.at(z)->at(0).y();
+
+                        }
+                        double x = temp_trs.at(i).at(j).x();
+                        double y = temp_trs.at(i).at(j).y();
+
+                        double t = ((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/
+                                (pow((x2-x1),2)+pow((y2-y1),2));
+                        if(t<0) t=0;
+                        else if(t>1) t = 1;
+
+                        double l = sqrt(pow(x1 - x + (x2-x1)*t,2) +
+                                        pow(y1 - y + (y2-y1)*t,2));
+                        if(l<1){
+                            bcs_vec.push_back(std::make_pair(k,1));
+                            map[k]=z;
+                            break;
+                        }
+                    }
+                }
+                k=k+1;
+            } else {
+                trs_vec.push_back(nodes_vec.indexOf(std::make_pair(temp_trs.at(i).at(j).x(), temp_trs.at(i).at(j).y())));
+            }
+            if(j==2){
+                 this->addLine(temp_trs.at(i).at(j).x(), temp_trs.at(i).at(j).y(), temp_trs.at(i).at(0).x(), temp_trs.at(i).at(0).y(), pen);
+            }
+            else
+                this->addLine(temp_trs.at(i).at(j).x(), temp_trs.at(i).at(j).y(), temp_trs.at(i).at(j+1).x(), temp_trs.at(i).at(j+1).y(), pen);
+        }
+        //trs << endr;
+    }
+    for(int k=0; k<trsD.size()/3;k++)
+    {
+        domains.push_back(std::make_pair(k,1));
+        int rez=0;
+        for (int i=0; i<dielectric_points.size();i++)
+        {
+            double Xmax,Xmin,Ymax,Ymin;
+            Xmax=dielectric_points.at(i)->at(0).x();
+            Xmin=dielectric_points.at(i)->at(0).x();
+            Ymax=dielectric_points.at(i)->at(0).y();
+            Ymin=dielectric_points.at(i)->at(0).y();
+            //qDebug()<<dielectric_points.at(i)->size();
+            for (int j=0; j<dielectric_points.at(i)->size();j++)
+            {
+                if (dielectric_points.at(i)->at(j).x()>Xmax)
+                    Xmax=dielectric_points.at(i)->at(j).x();
+                if (dielectric_points.at(i)->at(j).x()<Xmin)
+                    Xmin=dielectric_points.at(i)->at(j).x();
+                if (dielectric_points.at(i)->at(j).y()>Ymax)
+                    Ymax=dielectric_points.at(i)->at(j).y();
+                if (dielectric_points.at(i)->at(j).y()<Ymin)
+                    Ymin=dielectric_points.at(i)->at(j).y();
+                //qDebug()<<Xmax<<" "<<Xmin;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3)).second<=Ymax)
+                    rez++;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3+1)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3+1)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3+1)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3+1)).second<=Ymax)
+                    rez++;
+            }
+            if (nodes_vec.at(trs_vec.at(k*3+2)).first>=Xmin && nodes_vec.at(trs_vec.at(k*3+2)).first<=Xmax)
+            {
+                if (nodes_vec.at(trs_vec.at(k*3+2)).second>=Ymin && nodes_vec.at(trs_vec.at(k*3+2)).second<=Ymax)
+                    rez++;
+            }
+            if (rez==3)
+            {
+                domains.at(k).second=2;
+            }
+        }
+        rez=0;
+    }
+    // //////////////////////////////////////////////////////////////////////////////////
+
+    // Узлы в зоне расчета /////////////////////////////////////////////////////////////
+    for (int i=0;i<calczone_points.size();i++)
+    {
+        for (int j=0;j<nodes_vec.size();j++)
+        {
+            if(nodes_vec.at(j).first>=calczone_points.at(i)->at(0).x() && nodes_vec.at(j).first<=calczone_points.at(i)->at(1).x())
+            {
+                if (nodes_vec.at(j).second<=calczone_points.at(i)->at(3).y() && nodes_vec.at(j).second>=calczone_points.at(i)->at(0).y())
+                    calczone_nodes.push_back(nodes_vec.at(j));
+            }
+           // calcpoints.push_back(calc_zone_points);
+
+        }
+
+    for(int k=0;k<trs_vec.size()/3; k++){
+        bool inside=false;
+    for (int j=0;j<calczone_nodes.size();j++)
+    {
+        if (nodes_vec.at(trs_vec.at(3*k))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+        else if (nodes_vec.at(trs_vec.at(3*k+1))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+        else if (nodes_vec.at(trs_vec.at(3*k+2))==calczone_nodes.at(j))
+        {
+            inside=true;
+        }
+    }
+    if (inside==true)
+    {
+    calczone_trs.push_back(trs_vec.at(3*k));
+    calczone_trs.push_back(trs_vec.at(3*k+1));
+    calczone_trs.push_back(trs_vec.at(3*k+2));
+    }
+    }
+    calc_trs.push_back(calczone_trs);
+    calczone_nodes.clear();
+    calczone_trs.clear();
+    }
+    emit RefinementDone(temp_trs.size(),nodes_vec.size());
+
+}
+
+void GraphicScene::potential_line_calc(mat v_F, mat nodes_F) // построение эквипотенциальных линий(реалзовано неправильно,переделываю)
+{
+    QPen pen(Qt::black);
+    QList<QPointF> temppoints;
+    //this->clear();
+    for (double i=0.2; i<1;i=i+0.2)
+    {
+        temppoints.clear();
+        for (int j=0; j<nodes_F.n_rows;j++)
+        {
+        if (v_F(j,0)>i-0.05 && v_F(j,0)<i+0.05)
+        {
+           // qDebug()<<j;
+            temppoints.push_back(QPointF(nodes_F(j,0),nodes_F(j,1)));
+        }        
+        }
+        if (!temppoints.empty())
+        {
+        qDebug()<<"1";
+        QPointF p1,p2,p0;
+        p1=temppoints.at(0);
+        p0=temppoints.at(0);
+        temppoints.removeAt(0);
+        qDebug()<<"new";
+        while(!temppoints.empty())
+        {
+          //  qDebug()<<p1;
+            double l;
+            int k=0;
+            p2=temppoints.at(0);
+            l=sqrt(pow((p2.x()-p1.x()),2)+pow((p2.y()-p1.y()),2));
+            for (int j=0;j<temppoints.size();j++)
+            {
+                QPointF px;
+                double lx;
+                px=temppoints.at(j);
+                lx=sqrt(pow((px.x()-p1.x()),2)+pow((px.y()-p1.y()),2));
+                qDebug()<<l<<"  "<<lx;
+                if (lx<l)
+                {
+                    l=lx;
+                    k=j;
+                    p2=px;
+                }
+            }
+             this->addLine(p1.x(), p1.y(),p2.x(),p2.y(), pen);
+            p1=p2;
+            temppoints.removeAt(k);
+            qDebug()<<temppoints.size();
+        }
+        this->addLine(p1.x(), p1.y(),p0.x(),p0.y(), pen);
+    }
+    }
+
+}
+
+void GraphicScene::RectMesh(mat trs,mat nds, mat v) // новая сетка для построения силовых линий и экв потенциальных линий(переделываю)
+{
+    QList <QPointF> RectMesh_points;
+    mat RectMes_V;
+    QPen pen(Qt::black);
+    QPen pen1(Qt::white);
+    double dx,dy;
+    int N=10;
+    dx=(abs(outside_points.at(0)->at(0).x()-outside_points.at(0)->at(1).x()))/N;
+    dy=(abs(outside_points.at(0)->at(2).y()-outside_points.at(0)->at(0).y()))/N;
+    qDebug()<<dx<<"  "<<dy;
+    for (double yy=outside_points.at(0)->at(0).y();yy<=outside_points.at(0)->at(2).y();yy+=dy)
+    {
+    for (double xx=outside_points.at(0)->at(0).x(); xx<=outside_points.at(0)->at(1).x();xx+=dx)
+    {
+        RectMesh_points.push_back(QPointF(xx,yy));
+    }
+    }
+
+    RectMes_V.set_size(RectMesh_points.size(),1);
+    RectMes_V.zeros();
+
+
+
+    for (int j=0;j<RectMesh_points.size();j++){  //вычисление потенциалов
+    for (int i=0;i<trs.n_rows;i++)
+    {
+    double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
+    double Ax,Ay,Bx,By,Cx,Cy,Px,Py;
+    Ax=nds(n1,0); Ay=nds(n1,1);
+    Bx=nds(n2,0); By=nds(n2,1);
+    Cx=nds(n3,0); Cy=nds(n3,1);
+    Px=RectMesh_points.at(j).x();
+    Py=RectMesh_points.at(j).y();
+
+    for (int k=0;k<inside_points.size();k++) //внутренние точки
+    {
+        double x1,x2,y1,y2;
+        x1=inside_points.at(k)->at(0).x();
+        x2=inside_points.at(k)->at(1).x();
+        y1=inside_points.at(k)->at(0).y();
+        y2=inside_points.at(k)->at(2).y();
+        if (Px>x1 && Px<x2)
+            if(Py>y1 && Py<y2)
+            {
+                RectMes_V(j,0)=1.0;
+            }
+    }
+   if (RectMes_V(j,0)!=1.0)
+    if (IsPointIn_Geron(Ax,Ay,Bx,By,Cx,Cy,Px,Py)) // проверка принадлежности точки треугольнику формулами Герона
+    {
+        double v1,v2,v3;
+        v1=v(n1,0); v2=v(n2,0); v3=v(n3,0);
+        RectMes_V(j,0)=potentialIn(Ax,Ay,Bx,By,Cx,Cy,Px,Py,v1,v2,v3);
+
+      /*  QPolygonF poly;
+        poly<<QPointF(Ax,Ay)<<QPointF(Bx,By)<<QPointF(Cx,Cy)<<QPointF(Ax,Ay);
+        this->addPolygon(poly,pen,interpolate1(RectMes_V(j,0),1));*/
+        break;
+    }
+    }
+    }
+
+    mat Ex(RectMesh_points.size(),1,fill::zeros);
+    mat Ey(RectMesh_points.size(),1,fill::zeros);
+    for (int i=0;i<RectMesh_points.size();i++) // Ex Ey
+    {
+        double x,y;
+        x=RectMesh_points.at(i).x();
+        y=RectMesh_points.at(i).y();
+  /*  int radius = 1;
+       this->addEllipse(x - radius, y - radius, radius*2, radius*2,pen1);*/
+    if (RectMes_V(i,0)!=0 && RectMes_V(i,0)!=1)
+    {
+        for (int NN=-N-1;NN<=N+1;NN+=N+1)
+        {
+            int j=i+NN;
+            for (int k=-1;k<=1;k++)
+            {
+                int jj=j+k;
+               // qDebug()<<i<<jj;
+                if (RectMesh_points.at(jj).x()-x!=0.0)
+                Ex(i,0)=Ex(i,0)-(RectMes_V(jj,0)-RectMes_V(i,0))/(RectMesh_points.at(jj).x()-x);
+                if (RectMesh_points.at(jj).y()-y!=0.0)
+                Ey(i,0)=Ey(i,0)-(RectMes_V(jj,0)-RectMes_V(i,0))/(RectMesh_points.at(jj).y()-y);
+            }
+        }
+    }
+    }
+    Ex=Ex/Ex.max();
+    Ey=Ey/Ey.max();
+    Ex=Ex*20;
+    Ey=Ey*20;
+    for (int i=0;i<RectMesh_points.size();i++) //линии
+    {
+        double x,y;
+        x=RectMesh_points.at(i).x();
+        y=RectMesh_points.at(i).y();
+         if (RectMes_V(i,0)!=0 && RectMes_V(i,0)!=1)
+         {
+             double xn,yn;
+             xn=Ex(i,0)+x;
+             yn=Ey(i,0)+y;
+             this->addLine(x,y,x+Ex(i,0),y+Ey(i,0));
+             double ostr = 0.25;        // острота стрелки
+             double x0,y0,lons,ugol;
+             double f1x2 , f1y2;
+             x0 = xn - x;
+             y0 = yn - y;
+             lons = sqrt(x0*x0 + y0*y0) / 7;     // длина лепестков % от длины стрелки
+             ugol = atan2(y0, x0);             // угол наклона линии
+             f1x2 = xn - lons * cos(ugol - ostr);
+             f1y2 = yn - lons * sin(ugol - ostr);
+             this->addLine(xn, yn, f1x2, f1y2,pen);
+             f1x2 = xn - lons * cos(ugol + ostr);
+             f1y2 = yn - lons * sin(ugol + ostr);
+             this->addLine(xn, yn, f1x2, f1y2,pen);
+         }
+    }
+
+}
+
+void GraphicScene::RectMesh2(mat trs, mat nds, mat v)
+{
+    QList <QPointF> RectMesh_points;
+    mat RectMes_V;
+    QPen pen(Qt::black);
+    QPen pen1(Qt::white);
+    double dx,dy;
+    int N=25;
+    dx=(abs(outside_points.at(0)->at(0).x()-outside_points.at(0)->at(1).x()))/(N-1);
+    dy=(abs(outside_points.at(0)->at(2).y()-outside_points.at(0)->at(0).y()))/(N-1);
+  //  qDebug()<<dx<<"  "<<dy;
+    for (double yy=outside_points.at(0)->at(0).y();yy<=outside_points.at(0)->at(2).y();yy+=dy)
+    {
+    for (double xx=outside_points.at(0)->at(0).x(); xx<=outside_points.at(0)->at(1).x();xx+=dx)
+    {
+        RectMesh_points.push_back(QPointF(xx,yy));
+    }
+    }
+    RectMes_V.set_size(RectMesh_points.size(),1);
+    RectMes_V.zeros();
+    for (int j=0;j<RectMesh_points.size();j++){  //вычисление потенциалов
+    for (int i=0;i<trs.n_rows;i++)
+    {
+    double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
+    double Ax,Ay,Bx,By,Cx,Cy,Px,Py;
+    Ax=nds(n1,0); Ay=nds(n1,1);
+    Bx=nds(n2,0); By=nds(n2,1);
+    Cx=nds(n3,0); Cy=nds(n3,1);
+    Px=RectMesh_points.at(j).x();
+    Py=RectMesh_points.at(j).y();
+
+    for (int k=0;k<inside_points.size();k++) //внутренние точки
+    {
+        double x1,x2,y1,y2;
+        x1=inside_points.at(k)->at(0).x();
+        x2=inside_points.at(k)->at(1).x();
+        y1=inside_points.at(k)->at(0).y();
+        y2=inside_points.at(k)->at(2).y();
+        if (Px>x1 && Px<x2)
+            if(Py>y1 && Py<y2)
+            {
+                RectMes_V(j,0)=1.0;
+            }
+    }
+   if (RectMes_V(j,0)!=1.0)
+    if (IsPointIn_Geron(Ax,Ay,Bx,By,Cx,Cy,Px,Py)) // проверка принадлежности точки треугольнику формулами Герона
+    {
+        double v1,v2,v3;
+        v1=v(n1,0); v2=v(n2,0); v3=v(n3,0);
+        RectMes_V(j,0)=potentialIn(Ax,Ay,Bx,By,Cx,Cy,Px,Py,v1,v2,v3);
+
+      /*  QPolygonF poly;
+        poly<<QPointF(Ax,Ay)<<QPointF(Bx,By)<<QPointF(Cx,Cy)<<QPointF(Ax,Ay);
+        this->addPolygon(poly,pen,interpolate1(RectMes_V(j,0),1));*/
+        break;
+    }
+    }
+    }
+
+   mat points_x(N,N,fill::zeros);
+   mat points_y(N,N,fill::zeros);
+   mat v_in_points(N,N,fill::zeros);
+
+    for (int i;i<N;i++)
+        for (int j;j<N;j++)
+        {
+            points_x(i,j)=RectMesh_points.at(i*N+j).x();
+            points_y(i,j)=RectMesh_points.at(i*N+j).y();
+            v_in_points(i,j)=RectMes_V(i*N+j,0);
+        }
+
+  /*  mat ExEy(N,2,fill::zeros);
+    for (int i=1;i<N-1;i++)
+        for (int j=1;j<N-1;j++)
+        {
+
+        }*/
+
+
+
+
+
+
+
+}
+// принадлежность точки треугольнику,векторные метод
+bool GraphicScene::IsPIn_Vector(double aAx, double aAy, double aBx, double aBy, double aCx, double aCy, double aPx, double aPy)
+{
+    double Bx,By,Cx,Cy,Px,Py;
+    double m,l;
+    Bx=aBx-aAx; By=aBy-aAy;
+    Cx=aCx-aAx; Cy=aCy-aAy;
+    Px=aPx-aAx; Py=aPy-aAy;
+    m = (Px*By - Bx*Py) / (Cx*By - Bx*Cy);
+    if (m>=0 && m<=1)
+    {
+        l=(Px - m*Cx) / Bx;
+        if (l>=0 && (m+l)<=1){
+            return true;
+        }
+        else return false;
+    }
+    else return false;
+}
+// принадлежность точки треугольнику, сумма площадей
+bool GraphicScene::IsPointIn_Geron(double aAx, double aAy, double aBx, double aBy, double aCx, double aCy, double aPx, double aPy)
+{
+
+    double Area,Area1,Area2,Area3;
+    Area=abs(aBx*aCy - aCx*aBy - aAx*aCy + aCx*aAy + aAx*aBy - aBx*aAy);
+    Area1=abs(aBx*aCy - aCx*aBy - aPx*aCy + aCx*aPy + aPx*aBy - aBx*aPy);
+    Area2=abs(aPx*aCy - aCx*aPy - aAx*aCy + aCx*aAy + aAx*aPy - aPx*aAy);
+    Area3=abs(aBx*aPy - aPx*aBy - aAx*aPy + aPx*aAy + aAx*aBy - aBx*aAy);
+    if ((Area1+Area2+Area3-Area)<=0.01)
+        return true;
+    else return false;
+
+}
+//потенциал в произвольной точке треугольника
+double GraphicScene::potentialIn(double x1, double y1, double x2, double y2, double x3, double y3, double x, double y, double v1, double v2, double v3)
+{
+    double a1,a2,a3,S2;
+    S2=((x2*y3-x3*y2)+(x3*y1-x1*y3)+(x1*y2-x2*y1));
+    a1=((x2*y3-x3*y2)+(y2-y3)*x+(x3-x2)*y)/S2;
+    a2=((x3*y1-x1*y3)+(y3-y1)*x+(x1-x3)*y)/S2;
+    a3=((x1*y2-x2*y1)+(y1-y2)*x+(x2-x1)*y)/S2;
+    double v;
+    v=a1*v1+a2*v2+a3*v3;
+    if (abs(v)<1e-10)
+        v=0;
+    if (v>1)
+        v=1;
+    return v;
+
 }
 void GraphicScene::doTriangles()
 {
@@ -899,10 +1607,10 @@ void GraphicScene::doTriangles()
     //std::vector<Triangle2*> vZoneT;
     vZoneT.clear();
     pZone->getTriangles(vZoneT);
-    nodes.clear();
-    trs.clear();
-    nodes.set_size(vZoneT.size()*3, 2);
-    trs.set_size(vZoneT.size(),3);
+    nodesD.clear();
+    trsD.clear();
+    nodesD.set_size(vZoneT.size()*3, 2);
+    trsD.set_size(vZoneT.size(),3);
     //qDebug() << vZoneT.size()*3;
     bcs_vec.clear(); nodes_vec.clear(); trs_vec.clear();
     int k=0;
@@ -1060,7 +1768,7 @@ void GraphicScene::doTriangles()
     }
    // qDebug() << bcs_vec;
     // Нахождение треугольников в зоне диэлектрика(только для прямоугольников) ////////////////////////////////////////////
-    for(int k=0; k<trs.size()/3;k++)
+    for(int k=0; k<trsD.size()/3;k++)
     {
         domains.push_back(std::make_pair(k,1));
         int rez=0;

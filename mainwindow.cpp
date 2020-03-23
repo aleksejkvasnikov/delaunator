@@ -24,17 +24,21 @@ MainWindow::MainWindow(QWidget *parent) :
     pointszone = new PointsZone;
     ui->graphicsView->setScene(scene);
  //   ui->graphicsView->setAlignment(Qt::AlignBottom|Qt::AlignLeft);
-    ui->graphicsView->setSceneRect(-1800, -900, 3600, 1800);
+    ui->graphicsView->setSceneRect(-6000, -3600, 12000, 7200);
+
     ui->graphicsView->show();
    // this->resize(600, 600);
     Graphics_view_zoom* z = new Graphics_view_zoom(ui->graphicsView);
     z->set_modifiers(Qt::NoModifier);
+    matrix_C.set_size(2,2);
+    matrix_C.zeros();
  //   connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(on_some_pushButton_clicked()));
     //ui->graphicsView->installEventFilter();
     QObject::connect(scene, SIGNAL(move_scene_sig(bool)), this, SLOT(move_scene_slot(bool)));
     QObject::connect(scene, SIGNAL(send_triangles(int)), this, SLOT(addTringlesData(int)));
     QObject::connect(scene, SIGNAL(mouse_positionChanged(QPointF)), this, SLOT(update_position(QPointF)));
     QObject::connect(scene->pointszone, SIGNAL(zone_entered()),this, SLOT(pointszone_entered()));
+    QObject::connect(scene, SIGNAL(RefinementDone (double, double)), this, SLOT(RefinementTRS(double, double)));
 }
 
 MainWindow::~MainWindow()
@@ -45,9 +49,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::doFEMcalc(bool mode)
 {
-    mat AA;
-    AA.load("Aq.txt");
     mat bcs, nodes, trs, domains;
+    double tol;
     nodes.clear();
     nodes.set_size(scene->nodes_vec.size(), 2);
 
@@ -55,6 +58,7 @@ void MainWindow::doFEMcalc(bool mode)
         nodes(i,0)=scene->nodes_vec.at(i).first;
         nodes(i,1)=scene->nodes_vec.at(i).second;
     }
+
     trs.clear();
     trs.set_size(scene->trs_vec.size()/3,3);
     for(int i=0; i<scene->trs_vec.size()/3; i++){
@@ -73,7 +77,6 @@ void MainWindow::doFEMcalc(bool mode)
     //cout << "\n--------------\n";
     //cout << bcs;
     //qDebug()<<scene->getMapData(bcs(1,0));
-
     domains.clear();
     domains.set_size(scene->domains.size(),2);
     for (int i=0; i<scene->domains.size(); i++)
@@ -81,7 +84,6 @@ void MainWindow::doFEMcalc(bool mode)
         domains(i,0)=scene->domains.at(i).first;
         domains(i,1)=scene->domains.at(i).second;
     }
-
     int nr_nodes = nodes.n_rows;
     int nr_trs = trs.n_rows;
     int nr_bcs = bcs.n_rows;
@@ -91,7 +93,6 @@ void MainWindow::doFEMcalc(bool mode)
     mat b(3, nr_trs, fill::zeros);
     mat c(3, nr_trs, fill::zeros);
     mat d(3,3, fill::ones);
-
     //cout << nodes<< bcs << trs;
     for(int i=0; i<nr_trs; i++){
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
@@ -117,15 +118,13 @@ void MainWindow::doFEMcalc(bool mode)
         b(2,i) = temp(1,0);
         c(2,i) = temp(2,0);
         //qDebug() << a(n1,n1) << Area << pow(b(0,i),2) << pow(c(0,i),2);
-
         double eps;
         if(domains.at(i)==2)
             eps=ui->dielectric_edit->text().toDouble();
         else
             eps=1;
-
-
-
+        //qDebug()<<eps;
+        //qDebug()<<"--------------------------";
         a(n1,n1) = a(n1,n1) + Area*(pow(b(0,i),2) + pow(c(0,i),2))*(-eps);
         a(n1,n2) = a(n1,n2) + Area*(b(0,i)*b(1,i) + c(0,i)*c(1,i))*(-eps);
         a(n1,n3) = a(n1,n3) + Area*(b(0,i)*b(2,i) + c(0,i)*c(2,i))*(-eps);
@@ -142,7 +141,6 @@ void MainWindow::doFEMcalc(bool mode)
         //qDebug() << a(n3,n3) << a(n3,n1) << a(n3,n2);
     }
     //cout << a;
-
     //a.save("After.txt", arma_ascii);
     for(int i=0; i<nr_bcs; i++){
         double n = bcs(i,0);
@@ -161,6 +159,7 @@ void MainWindow::doFEMcalc(bool mode)
             f(i,0) = 0.0;
         }
     }
+
    // a.save("Arrr.txt", arma_ascii);
    // cout << a;
     //cout << "\n--------------\n";
@@ -169,14 +168,29 @@ void MainWindow::doFEMcalc(bool mode)
     if (scene->calc_trs.size()==0)
     {
    mat v;
+
     v = solve(mat(a),f);
   // cout << v;
-    get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
+    double W;
+    W=get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
+    double C;
+    C = 2*W*1e12;
     qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
 
-    scene->show_mesh(v, nr_trs, nodes, trs);
+   /* if(!mode)
+              scene->get_tri2d_E(v, nr_nodes, nr_trs, nodes, trs);
+          else scene->show_mesh(v, nr_trs, nodes, trs,ui->ReMeshEdit->text().toDouble());*/
+    if(!mode){
+    v_F = v;
+    C_F=C;
+    bcs_F = bcs;
+    trs_F = trs;
+    nodes_F = nodes;
+    nr_trs_F=nr_trs;
+    nr_nodes_F=nr_nodes;
     }
-
+        emit result_text(C_F,nr_trs_F,nr_nodes_F);
+    }
     if (scene->calc_trs.size()==1)
     {
         mat zone_trs;
@@ -192,10 +206,6 @@ void MainWindow::doFEMcalc(bool mode)
          v = solve(mat(a),f);
        // cout << v;
          get_tri2d_cap(v, nr_nodes, nr_zone_trs, nodes, zone_trs,domains);
-        scene->show_mesh(v, nr_trs, nodes, trs);
-    /*if(!mode)
-              scene->get_tri2d_E(v, nr_nodes, nr_trs, nodes, trs);
-          else scene->show_mesh(v, nr_trs, nodes, trs);*/
     }
     if (scene->calc_trs.size()==2)
     {
@@ -247,36 +257,52 @@ void MainWindow::doFEMcalc(bool mode)
        W22 = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
        W12 = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
        double C11, C12, C22;
-       C11 = 2 * W11;
-       C22 = 2 * W22;
-       C12 = W12 - (C11+C22)/2;
+       C11 = 2 * W11 * 1e12;
+       C22 = 2 * W22 * 1e12;
+       C12 = W12*1e12 - (C11+C22)/2;
        mat C;
        C.set_size(2,2);
-       C(0,0) = C11 + C12;
+       C(0,0) = C11 ;
        C(0,1) = C12;
        C(1,0) = C12;
-       C(1,1) = C22 + C12;
-       qDebug()<<"****************************";
-       qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
-       qDebug()<<endl;
-       qDebug()<<C11<<", "<<C12;
-       qDebug()<<C12<<", "<<C22;
-       qDebug()<<endl;
-       cout<<C;
-       ui->textBrowser->setText("C=|"+QString::number(C11)+"  "+QString::number(C12)+"|");
-       ui->textBrowser->append("    |"+QString::number(C12)+"  "+QString::number(C22)+"|");
-       ui->textBrowser->append("trs["+QString::number(nr_trs)+"]  nodes["+QString::number(nr_nodes)+"]");
-      /* if(!mode)
-          scene->get_tri2d_E(v11, nr_nodes, nr_trs, nodes, trs);
-      else scene->show_mesh(v12, nr_trs, nodes, trs);
-*/
+       C(1,1) = C22;
+        //qDebug()<<"****************************";
+       //qDebug()<<"["<<"W11="<<W11<<", "<<"W12="<<W12<<", "<<"W22="<<W22<<"]";
+      // qDebug()<<endl;
+     //  qDebug()<<C11<<", "<<C12;
+    //   qDebug()<<C12<<", "<<C22;
+   //    qDebug()<<endl;
+  //     cout<<C;
+       if (!mode){
+           cout << matrix_C;
+           del=abs(matrix_C(0,0)-C(0,0))/abs(matrix_C(0,0));
+           del1=abs(matrix_C(0,1)-C(0,1))/abs(matrix_C(0,1));
+           del2=abs(matrix_C(1,1)-C(1,1))/abs(matrix_C(1,1));
+           matrix_C=C;
+           v_F = v12;
+           bcs_F = bcs;
+           trs_F = trs;
+           nodes_F = nodes;
+           nr_trs_F=nr_trs;
+           nr_nodes_F=nr_nodes;
+
+
+           emit result_text(C,nr_trs_F,nr_nodes_F);
+       }
+
     }
+
 
 
 
 }
 double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs, mat domains)
 {
+    qDebug()<<nr_trs;
+    qDebug()<<trs.n_rows;
+    qDebug()<<domains.n_rows;
+    qDebug()<<v.n_rows;
+    qDebug()<<nds.n_rows;
     double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
     double mu0 = 4.0 * M_PI * pow(10.0, -7);
     double U = 0.0; double c1,c2,c3,b1,b2,b3;
@@ -288,6 +314,8 @@ double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds,
             eps=ui->dielectric_edit->text().toDouble();
         else
             eps=1;
+       // qDebug()<<eps;
+        //qDebug()<<"--------------------------";
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         //qDebug() << n1 << n2 << n3;
         //qDebug() << i;
@@ -317,6 +345,7 @@ double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds,
         U = U + Area * ( pow((v(n1,0)*b1 + v(n2,0)*b2 + v(n3,0)*b3),2) + pow((v(n1,0)*c1 + v(n2,0)*c2 + v(n3,0)*c3),2))*eps;
         //qDebug() << U;
     }
+    qDebug()<<"tut";
     U=U*eps0/2.0;
     double C = 2*U;
 
@@ -429,6 +458,8 @@ void MainWindow::on_circleButton_clicked()
 void MainWindow::on_femCalc_clicked()
 {
     doFEMcalc(false);
+    ui->showE_button->setEnabled(true);
+    ui->showMesh_button->setEnabled(true);
 }
 
 void MainWindow::on_make_1_button_clicked()
@@ -440,7 +471,7 @@ void MainWindow::on_make_1_button_clicked()
 
 void MainWindow::on_showMesh_button_clicked()
 {
-    doFEMcalc(true);
+   scene->show_mesh(v_F, nr_trs_F, nodes_F, trs_F,ui->ReMeshEdit->text().toDouble());
 }
 
 void MainWindow::pointszone_entered()
@@ -559,4 +590,57 @@ void MainWindow::on_loadButton_clicked()
             scene->SetDielectric(dielectric1);
             scene->drawLoad();
     }
+}
+
+void MainWindow::on_ReMesh_clicked()
+{
+    //if (nr_trs_it<nr_trs_F){
+    //    qDebug()<<nr_trs_it<<"  "<<nr_trs_F;
+    nr_trs_it = nr_trs_F;
+    scene->RefinementMesh(trs_F,v_F,nodes_F, ui->ReMeshEdit->text().toDouble());
+    ui->showE_button->setEnabled(false);
+    ui->showMesh_button->setEnabled(false);
+   // }
+   // else {
+   // ui->textBrowser->setText("Refinement done");
+   // }
+
+}
+
+void MainWindow::RefinementTRS(double nr_trs, double nr_nds)
+{
+    ui->textBrowser->setText("trs["+QString::number(nr_trs)+"]  nodes["+QString::number(nr_nds)+"]");
+}
+
+void MainWindow::on_showE_button_clicked()
+{
+    scene->get_tri2d_E(v_F, nr_nodes_F, nr_trs_F, nodes_F, trs_F);
+}
+
+void MainWindow::result_text(double C_F, double nr_trs_F, double nr_nodes_F)
+{
+    ui->textBrowser->clear();
+    ui->textBrowser->setText("C="+QString::number(C_F)+"["+"пФ"+"]");
+    ui->textBrowser->append("trs["+QString::number(nr_trs_F)+"]  nodes["+QString::number(nr_nodes_F)+"]");
+}
+
+void MainWindow::result_text(mat matrix_C, double nr_trs_F, double nr_nodes_F)
+{
+    ui->textBrowser->clear();
+    ui->textBrowser->setText("C=|"+QString::number(matrix_C(0,0))+"  "+QString::number(matrix_C(0,1))+"|" +"   "+ "["+"пФ"+"]");
+    ui->textBrowser->append("    |"+QString::number(matrix_C(0,1))+"  "+QString::number(matrix_C(1,1))+"|");
+    ui->textBrowser->append("trs["+QString::number(nr_trs_F)+"]  nodes["+QString::number(nr_nodes_F)+"]");
+    ui->textBrowser->append("del11["+QString::number(del)+"]  del12["+QString::number(del1)+"]"+"]  del22["+QString::number(del2)+"]");
+
+
+}
+
+void MainWindow::on_pushButton_5_clicked()
+{
+    scene->potential_line_calc(v_F,nodes_F);
+}
+
+void MainWindow::on_Rect_Mesh_button_clicked()
+{
+    scene->RectMesh(trs_F,nodes_F,v_F);
 }

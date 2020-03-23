@@ -15,6 +15,12 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QGraphicsView" name="graphicsView"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QTextBrowser" name="textBrowser"/>
+    </item>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="topLayout">
       <item>
@@ -64,6 +70,20 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loadButton">
+           <property name="text">
+            <string>Load</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -86,7 +106,24 @@
             <bool>false</bool>
            </property>
            <property name="text">
-            <string>Show2</string>
+            <string>Ф</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="showE_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>E</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_5">
+           <property name="text">
+            <string>Ф lines</string>
            </property>
           </widget>
          </item>
@@ -111,16 +148,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="saveButton">
+          <widget class="QPushButton" name="Rect_Mesh_button">
            <property name="text">
-            <string>Save</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="loadButton">
-           <property name="text">
-            <string>Load</string>
+            <string>Rect Mesh</string>
            </property>
           </widget>
          </item>
@@ -148,6 +178,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="ReMesh">
+           <property name="text">
+            <string>Refinement Mesh</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -162,6 +199,20 @@
               <widget class="QLineEdit" name="dielectric_edit">
                <property name="text">
                 <string>1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>K (0&lt;K&lt;1)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="ReMeshEdit">
+               <property name="text">
+                <string>0.1</string>
                </property>
               </widget>
              </item>
@@ -227,12 +278,6 @@
        </widget>
       </item>
      </layout>
-    </item>
-    <item row="1" column="0">
-     <widget class="QGraphicsView" name="graphicsView"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="QTextBrowser" name="textBrowser"/>
     </item>
    </layout>
   </widget>
