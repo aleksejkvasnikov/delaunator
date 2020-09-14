@@ -11,9 +11,14 @@
 #include <QFileDialog>
 #include <QDataStream>
 #include <QMessageBox>
+#include <complex>
+#include <QTime>
+#include <QStorageInfo>
 
-int a;
-#define M_PI 3.14
+
+
+
+#define M_PI 3.1416
 using namespace arma;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -49,6 +54,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::doFEMcalc(bool mode)
 {
+    QTime time;
+    time.start();
     mat bcs, nodes, trs, domains;
     double tol;
     nodes.clear();
@@ -84,6 +91,7 @@ void MainWindow::doFEMcalc(bool mode)
         domains(i,0)=scene->domains.at(i).first;
         domains(i,1)=scene->domains.at(i).second;
     }
+    cout<<domains;
     int nr_nodes = nodes.n_rows;
     int nr_trs = trs.n_rows;
     int nr_bcs = bcs.n_rows;
@@ -117,14 +125,19 @@ void MainWindow::doFEMcalc(bool mode)
         temp = solve(d, tempest);
         b(2,i) = temp(1,0);
         c(2,i) = temp(2,0);
-        //qDebug() << a(n1,n1) << Area << pow(b(0,i),2) << pow(c(0,i),2);
-        double eps;
-        if(domains.at(i)==2)
+        double eps = 1;
+
+        if (!domains.empty())
+        {
+        if(domains(i,1)==2)
             eps=ui->dielectric_edit->text().toDouble();
+        else if (domains(i,1)==3)
+            eps=ui->dielectric_edit_2->text().toDouble();
         else
             eps=1;
-        //qDebug()<<eps;
-        //qDebug()<<"--------------------------";
+        }
+
+
         a(n1,n1) = a(n1,n1) + Area*(pow(b(0,i),2) + pow(c(0,i),2))*(-eps);
         a(n1,n2) = a(n1,n2) + Area*(b(0,i)*b(1,i) + c(0,i)*c(1,i))*(-eps);
         a(n1,n3) = a(n1,n3) + Area*(b(0,i)*b(2,i) + c(0,i)*c(2,i))*(-eps);
@@ -174,7 +187,14 @@ void MainWindow::doFEMcalc(bool mode)
     double W;
     W=get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
     double C;
-    C = 2*W*1e12;
+    C = 2*W;
+    double mu0 = 4.0 * M_PI * pow(10.0, -7);
+    int c0=299792456;
+    double eps0=1/(mu0*c0*c0);
+    double L = (mu0 * eps0)/ C;
+    double Z1 = pow((L/C),0.5);
+    C = C*1e12;
+    L = L*1e6;
     qDebug()<<"trs["<<nr_trs<<"] nodes["<<nr_nodes<<"]";
 
    /* if(!mode)
@@ -188,8 +208,13 @@ void MainWindow::doFEMcalc(bool mode)
     nodes_F = nodes;
     nr_trs_F=nr_trs;
     nr_nodes_F=nr_nodes;
+    domains_F = domains;
     }
-        emit result_text(C_F,nr_trs_F,nr_nodes_F);
+    double times;
+    times = time.elapsed();
+
+
+        emit result_text(C_F,nr_trs_F,nr_nodes_F,times, L, Z1);
     }
     if (scene->calc_trs.size()==1)
     {
@@ -256,13 +281,15 @@ void MainWindow::doFEMcalc(bool mode)
       //  qDebug()<<"c22'";
        W22 = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
        W12 = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
+
+       qDebug()<<W11<<W22<<W12;
        double C11, C12, C22;
-       C11 = 2 * W11 * 1e12;
-       C22 = 2 * W22 * 1e12;
-       C12 = W12*1e12 - (C11+C22)/2;
+       C11 = 2 * W11;
+       C22 = 2 * W22;
+       C12 = W12 - (C11+C22)/2;
        mat C;
        C.set_size(2,2);
-       C(0,0) = C11 ;
+       C(0,0) = C11;
        C(0,1) = C12;
        C(1,0) = C12;
        C(1,1) = C22;
@@ -273,8 +300,62 @@ void MainWindow::doFEMcalc(bool mode)
     //   qDebug()<<C12<<", "<<C22;
    //    qDebug()<<endl;
   //     cout<<C;
+
+       double W11l,W12l,W22l;
+       W11l = get_tri2d_cap(v11, nr_nodes, nr_trs, nodes, trs,domains);
+       W22l = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
+       W12l = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
+
+       domains.zeros();
+       double C011, C012, C022;
+       C011 = 2 * W11l;
+       C022 = 2 * W22l;
+       C012 = W12l - (C011+C022)/2;
+       mat C0;
+
+       C0.set_size(2,2);
+       C0(0,0) = C011;
+       C0(0,1) = C012;
+       C0(1,0) = C012;
+       C0(1,1) = C022;
+       C0 = inv(C0);
+
+       mat L(2,2);
+       double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
+       double mu0 = 4.0 * M_PI * pow(10.0, -7);
+       L = eps0*mu0*C0;
+       //cout<<L;
+
+       mat Z;
+       Z = L/C;
+      // Z = sqrt (Z);
+      std::complex<double> z11(Z(0,0),0);
+      std::complex<double> z12(Z(0,1),0);
+      std::complex<double> z21(Z(1,0),0);
+      std::complex<double> z22(Z(1,1),0);
+      //cout << "\n--------------\n";
+      //cout<<z11<<z12;
+      //cout<<z21<<z22;
+      //cout << "\n--------------\n";
+      z11=sqrt(z11);
+       z12=sqrt(z12);
+        z21=sqrt(z21);
+         z22=sqrt(z22);
+          std::complex<double> ze1;
+           std::complex<double> zo1;
+           std::complex<double> ze2;
+            std::complex<double> zo2;
+           ze1 = z11+z12;
+           zo1 = z11-z12;
+           ze2 = z22+z21;
+           zo2 = z22-z21;
+    //cout<<ze1<<zo1;
+    //cout<<ze2<<zo2;
+    //cout << "\n--------------\n";
+
+
        if (!mode){
-           cout << matrix_C;
+           //cout << matrix_C;
            del=abs(matrix_C(0,0)-C(0,0))/abs(matrix_C(0,0));
            del1=abs(matrix_C(0,1)-C(0,1))/abs(matrix_C(0,1));
            del2=abs(matrix_C(1,1)-C(1,1))/abs(matrix_C(1,1));
@@ -287,11 +368,126 @@ void MainWindow::doFEMcalc(bool mode)
            nr_nodes_F=nr_nodes;
 
 
-           emit result_text(C,nr_trs_F,nr_nodes_F);
+           double times;
+           times = time.elapsed();
+           emit result_text(C,nr_trs_F,nr_nodes_F, L,times);
        }
 
     }
+    else if (scene->calc_trs.size()>2) {
+        double N;
+        mat vv;
+        N=scene->calc_trs.size();
+        mat C(N,N,fill::zeros);
+        for (int i=0; i<N; i++)
+        {
+            mat f_temp;
+            f_temp = f;
+            for (int j=0; j<f.n_rows; j++){
+            if (scene->getMapData(j)!=i)
+                f_temp(j,0)=0;
+            }
+            mat vii;
+            vii = solve(mat(a),f_temp);
 
+            double Wii, Cii;
+            Wii = get_tri2d_cap(vii, nr_nodes, nr_trs, nodes, trs, domains);
+            Cii = 2 * Wii;
+            C(i,i) = Cii;
+        }
+        //cout<<C;
+
+        for (int i=0; i < N-1; i++)
+        {
+            for (int j=i+1; j<N; j++)
+            {
+                mat f_temp;
+                f_temp = f;
+                for (int k=0; k<f.n_rows; k++){
+                if (scene->getMapData(k)!=i && scene->getMapData(k)!=j)
+                    f_temp(k,0)=0;
+                }
+                mat vij;
+                vij = solve(mat(a),f_temp);
+                vv=vij;
+                double Wij, Cij;
+                Wij = get_tri2d_cap(vij, nr_nodes, nr_trs, nodes, trs, domains);
+                Cij = Wij - (C(i,i)+C(j,j))/2;
+                C(i,j) = Cij;
+                C(j,i) = Cij;
+            }
+        }
+        scene->show_mesh(vv, nr_trs, nodes, trs,ui->ReMeshEdit->text().toDouble(),domains);
+        qDebug()<<"trs="<<nr_trs;
+        C=C*1e12;
+        //C.save("C.txt",arma_ascii);
+        cout<<C;
+        cout<<"-------------";
+    }
+
+
+
+qDebug("Time elapsed: %d ms", time.elapsed());
+}
+
+mat MainWindow::CmpElMtx_Bandeson(mat xy, double elInx)
+{
+    double eps;
+    if(scene->domains.at(elInx).second==2)
+        eps=ui->dielectric_edit->text().toDouble();
+    else if (scene->domains.at(elInx).second==3)
+        eps=ui->dielectric_edit_2->text().toDouble();
+    else
+        eps=1;
+
+    mat s1,s2,s3;
+    s1=xy.col(2)-xy.col(1);
+    s2=xy.col(0)-xy.col(2);
+    s3=xy.col(1)-xy.col(0);
+    double Atot;
+    Atot = 0.5 * (s2(0)*s3(1)-s2(1)*s3(0));
+
+    if (Atot < 0)
+      qDebug()<<"The nodes of the element given in wrong order";
+
+   // qDebug()<<Atot;
+    mat grad_phi1e, grad_phi2e, grad_phi3e, grad_phi;
+    grad_phi1e.set_size(2,1);
+    grad_phi2e.set_size(2,1);
+    grad_phi3e.set_size(2,1);
+
+    grad_phi1e(0)=-s1(1);
+    grad_phi1e(1)=s1(0);
+    grad_phi1e = grad_phi1e / (2*Atot);
+
+    grad_phi2e(0)=-s2(1);
+    grad_phi2e(1)=s2(0);
+    grad_phi2e = grad_phi2e / (2*Atot);
+
+    grad_phi3e(0)=-s3(1);
+    grad_phi3e(1)=s3(0);
+    grad_phi3e = grad_phi3e / (2*Atot);
+
+    grad_phi.set_size(2,3);
+    grad_phi.col(0)=grad_phi1e;
+    grad_phi.col(1)=grad_phi2e;
+    grad_phi.col(2)=grad_phi3e;
+
+    mat Ae,I,J;
+    mat T(1,1,fill::zeros);
+    mat E(1,1,fill::zeros);
+   // E = T * T;
+    Ae.set_size(3,3);
+    for (int i=0; i<3; i++)
+        for (int j=0; j<3; j++)
+        {
+            I = grad_phi.col(i).t();
+            J = grad_phi.col(j);
+            T = I * J * Atot*eps;
+            Ae(i,j) = T(0);
+        }
+
+    return Ae;
 
 
 
@@ -306,14 +502,19 @@ double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds,
     double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
     double mu0 = 4.0 * M_PI * pow(10.0, -7);
     double U = 0.0; double c1,c2,c3,b1,b2,b3;
-    double eps;
+    double eps = 1;
     //cout << v;
     mat d(3,3, fill::ones);
     for(int i=0; i<nr_trs; i++){
+       if (!domains.empty())
+       {
         if (domains(i,1)==2)
             eps=ui->dielectric_edit->text().toDouble();
+        else if (domains(i,1)==3)
+            eps=ui->dielectric_edit_2->text().toDouble();
         else
             eps=1;
+        }
        // qDebug()<<eps;
         //qDebug()<<"--------------------------";
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
@@ -358,6 +559,406 @@ double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds,
     text="C = "+QString::number(C);
     ui->textBrowser->setText(text);
     return U;
+}
+
+void MainWindow::FEM_Bandeson()
+{
+    QTime time;
+    time.start();
+    double mu0 = 4.0 * M_PI * pow(10.0, -7);
+   // qDebug()<<mu0;
+    int c0=299792456;
+    double eps0=1/(mu0*c0*c0);
+    mat bcs, nodes, trs, domains;
+    nodes.clear();
+    nodes.set_size(2,scene->nodes_vec.size());
+
+    for(int i=0; i<scene->nodes_vec.size(); i++){
+        nodes(0,i)=scene->nodes_vec.at(i).first;
+        nodes(1,i)=scene->nodes_vec.at(i).second;
+    }
+    trs.clear();
+    trs.set_size(3,scene->trs_vec.size()/3);
+    for(int i=0; i<scene->trs_vec.size()/3; i++){
+        trs(0,i)=scene->trs_vec.at(3*i);
+        trs(1,i)=scene->trs_vec.at(3*i+1);
+        trs(2,i)=scene->trs_vec.at(3*i+2);
+        //qDebug () << scene->trs_vec.at(i) << scene->trs_vec.at(i+1) << scene->trs_vec.at(i+2);
+    }
+    //cout << trs;
+    mat noExt, noInt, no2xy, el2no;
+    noExt.clear();
+    noInt.clear();
+    no2xy.clear();
+    el2no.clear();
+    no2xy = nodes;
+    el2no  = trs;
+
+    if (scene->calc_trs.size()<2)
+    {
+    QVector<double> TempExt;
+    QVector<double> TempInt;
+    for (int i =0; i < scene->bcs_vec.size(); i++){
+        if (scene->bcs_vec.at(i).second==1.0)
+            TempInt.push_back(scene->bcs_vec.at(i).first);
+        else
+            TempExt.push_back(scene->bcs_vec.at(i).first);
+    }
+    noInt.set_size(1,TempInt.size());
+    for (int i=0; i < TempInt.size(); i++)
+    {
+        noInt(i) = TempInt.at(i);
+    }
+
+    noExt.set_size(1,TempExt.size());
+    for (int i=0; i<TempExt.size(); i++)
+    {
+        noExt(i) = TempExt.at(i);
+    }
+
+    /*double d1,d2,d3,d4,d5,d6,d7,d8;
+    d1 = no2xy.n_rows;
+    d2 = no2xy.n_cols;
+    d3 = el2no.n_rows;
+    d4 = el2no.n_cols;
+    d5 = noInt.n_rows;
+    d6 = noInt.n_cols;
+    d7 = noExt.n_rows;
+    d8 = noExt.n_cols;
+    qDebug()<<"no2xy"<<d1<<d2;
+    qDebug()<<"el2no"<<d3<<d4;
+    qDebug()<<"noInt"<<d5<<d6;
+    qDebug()<<"noExt"<<d7<<d8;
+    /*noExt.load("noExt.txt");
+    noInt.load("noInt.txt");
+    no2xy.load("no2xy.txt");
+    el2no.load("el2no.txt");*/
+
+
+    double W;
+    W = W_Bandeson(noExt,noInt,no2xy,el2no);
+    //qDebug()<<eps0;
+    double C;
+    C = 2*W;
+    qDebug()<<C;
+    qDebug("Time elapsed: %d ms", time.elapsed());
+    double times;
+    times = time.elapsed();
+    double L = (mu0 * eps0)/ C;
+    double Z1 = pow((L/C),0.5);
+    C = C*pow(10.0,12);
+    L = L*1e6;
+        emit result_text(C,nr_trs_F,nr_nodes_F, times, L, Z1);
+    }
+    else if (scene->calc_trs.size()==2)
+    {
+        QVector<double> TempExt;
+        QVector<double> TempInt;
+        QVector<double> TempInt1;
+        QVector<double> TempInt2;
+        for (int i =0; i < scene->bcs_vec.size(); i++){
+            if (scene->bcs_vec.at(i).second==1.0)
+            {
+                TempInt.push_back(scene->bcs_vec.at(i).first);
+                if (scene->getMapData(scene->bcs_vec.at(i).first)==1)
+                {
+                    TempInt1.push_back(scene->bcs_vec.at(i).first);
+                }
+                else if (scene->getMapData(scene->bcs_vec.at(i).first)==0)
+                {
+                    TempInt2.push_back(scene->bcs_vec.at(i).first);
+                }
+            }
+            else
+                TempExt.push_back(scene->bcs_vec.at(i).first);
+        }
+
+        noInt.set_size(1,TempInt.size());
+        for (int i=0; i < TempInt.size(); i++)
+        {
+            noInt(i) = TempInt.at(i);
+        }
+
+        mat noInt1;
+        noInt1.set_size(1,TempInt1.size());
+        for (int i=0; i < TempInt1.size(); i++)
+        {
+            noInt1(i) = TempInt1.at(i);
+        }
+
+
+        mat noInt2;
+        noInt2.set_size(1,TempInt2.size());
+        for (int i=0; i < TempInt2.size(); i++)
+        {
+            noInt2(i) = TempInt2.at(i);
+        }
+
+        noExt.set_size(1,TempExt.size());
+        for (int i=0; i<TempExt.size(); i++)
+        {
+            noExt(i) = TempExt.at(i);
+        }
+
+        double W11, W22, W12;
+        W11 = W_Bandeson(noExt,noInt1,no2xy,el2no);
+        W22 = W_Bandeson(noExt,noInt2,no2xy,el2no);
+        W12 = W_Bandeson(noExt,noInt,no2xy,el2no);
+        qDebug()<<W11<<W22<<W12;
+
+        double C11, C12, C22;
+        C11 = 2 * W11;
+        C22 = 2 * W22;
+        C12 = W12 - (C11+C22)/2;
+
+        mat C;
+        C.set_size(2,2);
+        C(0,0) = C11;
+        C(0,1) = C12;
+        C(1,0) = C12;
+        C(1,1) = C22;
+        mat C0;
+        C0 = inv(C);
+
+        mat L(2,2);
+        L = eps0*mu0*C0;
+
+        cout<<L;
+        double times;
+        times = time.elapsed();
+        emit result_text(C,1,1, L,times);
+
+    }
+
+    else
+    {
+        noInt.clear();
+        noExt.clear();
+        double N;
+        mat vv;
+        N=scene->calc_trs.size();
+        mat C(N,N,fill::zeros);
+        for (int i=0; i<N; i++)
+        {
+            QVector<double> TempExt;
+            QVector<double> TempInt;
+            for (int j =0; j < scene->bcs_vec.size(); j++)
+            {
+                if (scene->bcs_vec.at(j).second==1.0)
+                {
+                    if (scene->getMapData(scene->bcs_vec.at(j).first)==i)
+                    {
+                        TempInt.push_back(scene->bcs_vec.at(j).first);
+                    }
+                }
+                else
+                    TempExt.push_back(scene->bcs_vec.at(j).first);
+            }
+
+            noInt.set_size(1,TempInt.size());
+            for (int i=0; i < TempInt.size(); i++)
+            {
+                noInt(i) = TempInt.at(i);
+            }
+
+            noExt.set_size(1,TempExt.size());
+            for (int i=0; i<TempExt.size(); i++)
+            {
+                noExt(i) = TempExt.at(i);
+            }
+            double Wii, Cii;
+            Wii = W_Bandeson(noExt,noInt,no2xy,el2no);
+            Cii = 2 * Wii;
+            C(i,i) = Cii;
+        }
+        for (int i=0; i < N-1; i++)
+                {
+                    for (int j=i+1; j<N; j++)
+                    {
+                        QVector<double> TempExt;
+                        QVector<double> TempInt;
+                        for (int k =0; k < scene->bcs_vec.size(); k++)
+                        {
+                            if (scene->bcs_vec.at(k).second==1.0)
+                            {
+                                if (scene->getMapData(scene->bcs_vec.at(k).first)==i || scene->getMapData(scene->bcs_vec.at(k).first)==j)
+                                {
+                                    TempInt.push_back(scene->bcs_vec.at(k).first);
+                                }
+                            }
+                            else
+                                TempExt.push_back(scene->bcs_vec.at(k).first);
+                        }
+                        noInt.clear();
+                        noExt.clear();
+
+                        noInt.set_size(1,TempInt.size());
+                        for (int i=0; i < TempInt.size(); i++)
+                        {
+                            noInt(i) = TempInt.at(i);
+                        }
+
+                        noExt.set_size(1,TempExt.size());
+                        for (int i=0; i<TempExt.size(); i++)
+                        {
+                            noExt(i) = TempExt.at(i);
+                        }
+
+                        double Wij, Cij;
+                        Wij = W_Bandeson(noExt,noInt,no2xy,el2no);
+                        Cij = Wij - (C(i,i)+C(j,j))/2;
+                        C(i,j) = Cij;
+                        C(j,i) = Cij;
+                    }
+                }
+        C = C*1e12;
+        cout<<C;
+        double times;
+        times = time.elapsed();
+        qDebug()<<times;
+
+    }
+}
+
+double MainWindow::W_Bandeson(mat noExt,mat noInt,mat no2xy,mat el2no)
+{
+    double mu0 = 4.0 * M_PI * pow(10.0, -7);
+   // qDebug()<<mu0;
+    int c0=299792456;
+    double eps0=1/(mu0*c0*c0);
+    double noNum, elNum;
+    noNum = no2xy.n_cols;
+    elNum = el2no.n_cols;
+   // qDebug()<<elNum;
+   // cout<<no2xy;
+    no2xy = pow(10.0, -2) * no2xy;
+   // cout << no2xy;
+    mat A(noNum, noNum, fill::zeros);
+    mat b(noNum, 1, fill::zeros);
+
+    for (int elIdx=0; elIdx<elNum; elIdx++)
+    {
+        mat no, xy;
+        no=el2no.col(elIdx);
+
+        xy.set_size(2,3);
+        xy.col(0)=no2xy.col(no(0));
+        xy.col(1)=no2xy.col(no(1));
+        xy.col(2)=no2xy.col(no(2));
+
+        mat A_el;
+       A_el = CmpElMtx_Bandeson(xy,elIdx);
+
+
+
+        for (int i=0; i<3; i++)
+            for (int j=0; j<3; j++)
+            {
+                A(no(j),no(i)) = A(no(j),no(i)) +  A_el(i,j);
+            }
+    }
+    //cout<<A;
+   // A.save("A.txt",arma_ascii);
+
+
+
+
+    mat no_ess_temp(1,noInt.n_elem+noExt.n_elem);
+
+    for (int i=0; i<noInt.n_elem; i++)
+        no_ess_temp(i) = noInt(i);
+    for (int i=0; i<noExt.n_elem; i++)
+        no_ess_temp(noInt.n_elem+i) = noExt(i);
+
+   // cout<<no_ess_temp;
+    mat no_ess;
+    no_ess = unique (no_ess_temp);
+    no_ess = no_ess.t();
+  //  cout<<no_ess;
+
+
+    mat no_all(1,noNum);
+    for (int i=0; i<noNum; i++)
+        no_all(i) = i;
+    //cout<<no_all;
+
+    mat no_nat;
+    no_nat = no_all;
+    for (int i=0; i<no_ess.n_elem; i++)
+    {
+        no_nat(no_ess(i))=0;
+    }
+    no_nat = nonzeros(no_nat);
+    no_nat = no_nat.t();
+   // cout<<no_nat;
+
+
+    mat A_ess(no_nat.n_elem,no_ess.n_elem);
+    for (int i = 0; i < no_nat.n_elem; i++)
+    {
+        for (int j = 0; j < no_ess.n_elem; j++)
+        {
+            A_ess(i,j) = A(no_nat(i),no_ess(j));
+        }
+    }
+   // cout<<A_ess;
+
+    mat A_nat (no_nat.n_elem,no_nat.n_elem);
+    for (int i = 0; i<no_nat.n_elem; i++)
+    {
+        for(int j = 0; j<no_nat.n_elem; j++)
+        {
+            A_nat(i,j) = A(no_nat(i),no_nat(j));
+        }
+    }
+    mat B(no_nat.n_elem,1);
+    for (int i = 0; i<no_nat.n_elem; i++)
+    {
+        B(i) = b(no_nat(i));
+    }
+
+    mat z(no_all.n_elem,1,fill::zeros);
+    for (int i = 0; i<noInt.n_elem; i++)
+    {
+        z(noInt(i)) = 1;
+    }
+
+    mat z_ess(no_ess.n_elem,1);
+    for (int i=0; i<no_ess.n_elem; i++)
+    {
+        z_ess(i) = z(no_ess(i));
+    }
+
+
+    mat z_nat;
+    mat temp;
+    temp = (B - A_ess * z_ess);
+    z_nat = solve(A_nat,temp);
+   // cout<<z_nat;
+
+    mat Z(no_all.n_elem,1,fill::zeros);
+    for (int i = 0; i<no_ess.n_elem;i++)
+    {
+        Z(no_ess(i)) = z_ess(i);
+    }
+    for (int i = 0; i<no_nat.n_elem;i++)
+    {
+        Z(no_nat(i)) = z_nat(i);
+    }
+
+    //cout<<Z;
+    mat Zi(1,Z.n_elem);
+    for (int i = 0; i<Z.n_elem; i++)
+    {
+        Zi(i)=Z(i);
+    }
+
+    mat temp1;
+    temp1 = Zi*A*Z;
+
+    double W;
+    W = 0.5 * eps0 * as_scalar(temp1);
+    return W;
 }
 
 void MainWindow::move_scene_slot(bool mode)
@@ -471,7 +1072,7 @@ void MainWindow::on_make_1_button_clicked()
 
 void MainWindow::on_showMesh_button_clicked()
 {
-   scene->show_mesh(v_F, nr_trs_F, nodes_F, trs_F,ui->ReMeshEdit->text().toDouble());
+   scene->show_mesh(v_F, nr_trs_F, nodes_F, trs_F,ui->ReMeshEdit->text().toDouble(),domains_F);
 }
 
 void MainWindow::pointszone_entered()
@@ -617,30 +1218,41 @@ void MainWindow::on_showE_button_clicked()
     scene->get_tri2d_E(v_F, nr_nodes_F, nr_trs_F, nodes_F, trs_F);
 }
 
-void MainWindow::result_text(double C_F, double nr_trs_F, double nr_nodes_F)
+void MainWindow::result_text(double C_F, double nr_trs_F, double nr_nodes_F, double times,double L, double Z1)
 {
     ui->textBrowser->clear();
     ui->textBrowser->setText("C="+QString::number(C_F)+"["+"пФ"+"]");
+    ui->textBrowser->append("L="+QString::number(L));
+    ui->textBrowser->append("Z1="+QString::number(Z1));
     ui->textBrowser->append("trs["+QString::number(nr_trs_F)+"]  nodes["+QString::number(nr_nodes_F)+"]");
+    ui->textBrowser->append("time=" + QString::number(times));
 }
 
-void MainWindow::result_text(mat matrix_C, double nr_trs_F, double nr_nodes_F)
+void MainWindow::result_text(mat matrix_C, double nr_trs_F, double nr_nodes_F, mat L, double times)
 {
     ui->textBrowser->clear();
-    ui->textBrowser->setText("C=|"+QString::number(matrix_C(0,0))+"  "+QString::number(matrix_C(0,1))+"|" +"   "+ "["+"пФ"+"]");
-    ui->textBrowser->append("    |"+QString::number(matrix_C(0,1))+"  "+QString::number(matrix_C(1,1))+"|");
+    ui->textBrowser->setText("C=|"+QString::number(matrix_C(0,0)* 1e12)+"  "+QString::number(matrix_C(0,1)* 1e12)+"|" +"   "+ "["+"пФ"+"]");
+    ui->textBrowser->append("    |"+QString::number(matrix_C(0,1)* 1e12)+"  "+QString::number(matrix_C(1,1)* 1e12)+"|");
     ui->textBrowser->append("trs["+QString::number(nr_trs_F)+"]  nodes["+QString::number(nr_nodes_F)+"]");
-    ui->textBrowser->append("del11["+QString::number(del)+"]  del12["+QString::number(del1)+"]"+"]  del22["+QString::number(del2)+"]");
+    //ui->textBrowser->append("del11["+QString::number(del)+"]  del12["+QString::number(del1)+"]"+"]  del22["+QString::number(del2)+"]");
+    ui->textBrowser->append("L=|"+QString::number(L(0,0)* 1e9)+"  "+QString::number(L(0,1)* 1e9)+"|");
+    ui->textBrowser->append("    |"+QString::number(L(0,1)* 1e9)+"  "+QString::number(L(1,1)* 1e9)+"|");
+    ui->textBrowser->append("time=" + QString::number(times));
 
 
 }
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    scene->potential_line_calc(v_F,nodes_F);
+    scene->potential_line_calc(v_F,nodes_F,trs_F);
 }
 
 void MainWindow::on_Rect_Mesh_button_clicked()
 {
-    scene->RectMesh(trs_F,nodes_F,v_F);
+    scene->RectMesh2(trs_F,nodes_F,v_F);
+}
+
+void MainWindow::on_FemBandesonButton_clicked()
+{
+    FEM_Bandeson();
 }

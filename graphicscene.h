@@ -30,7 +30,7 @@ public:
     explicit GraphicScene(QObject *parent = 0);
     void setQualPoints(int n);
     void get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, mat trs);
-    void show_mesh(mat v, double nr_trs, mat nds, mat trs,double K);
+    void show_mesh(mat v, double nr_trs, mat nds, mat trs,double K, mat domains);
     void setActiveDrawer(int type);
     bool find_nearest_point(QPointF p);
     QColor interpolate(double value, double max);
@@ -75,7 +75,14 @@ public slots:
     void EnterPointsZone();
     QPointF calcMidGradPoint(QPointF Pmax,QPointF Pmin,double vmax,double vmid);
     void RefinementMesh(mat trs,mat v, mat nds, double K);
-    void potential_line_calc(mat v_F,mat nodes_F);
+    void potential_line_plot(QList<QPointF> temppoints, double Vecv);
+    void potential_line_calc(mat v, mat nds, mat trs);
+    void Sort_Vpoints (QVector< QPointF > temppoints, QPolygonF &poly);
+    static bool sortonx_up(const QPointF &p1, const QPointF &p2);
+    static bool sortonx_down(const QPointF &p1, const QPointF &p2);
+    float distance(const QPointF& pt1, const QPointF& pt2);
+    QPointF getLineStart(const QPointF& pt1, const QPointF& pt2);
+    QPointF getLineEnd(const QPointF& pt1, const QPointF& pt2);
     void RectMesh (mat trs, mat nds, mat v);
     void RectMesh2 (mat trs, mat nds, mat v);
     bool IsPIn_Vector (double aAx,double aAy, double aBx,double aBy,double aCx, double aCy, double aPx,double aPy);

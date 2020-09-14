@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>695</width>
-    <height>640</height>
+    <width>799</width>
+    <height>627</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
          <item>
           <widget class="QPushButton" name="pointButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
             <string>Point</string>
@@ -101,6 +101,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="FemBandesonButton">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>FemBandeson</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="showMesh_button">
            <property name="enabled">
             <bool>false</bool>
@@ -122,6 +132,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_5">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="text">
             <string>Ф lines</string>
            </property>
@@ -130,7 +143,7 @@
          <item>
           <widget class="QPushButton" name="pushButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
             <string>Connect</string>
@@ -179,6 +192,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="ReMesh">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="text">
             <string>Refinement Mesh</string>
            </property>
@@ -191,7 +207,7 @@
              <item>
               <widget class="QLabel" name="dielectric_label">
                <property name="text">
-                <string>Dielectric constant</string>
+                <string>Dielectric constant 1</string>
                </property>
               </widget>
              </item>
@@ -220,6 +236,20 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Dielectric constant 2</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="dielectric_edit_2">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QLabel" name="label_3">
                <property name="text">
@@ -286,7 +316,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>695</width>
+     <width>799</width>
      <height>26</height>
     </rect>
    </property>
