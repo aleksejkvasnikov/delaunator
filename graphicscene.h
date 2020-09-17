@@ -14,6 +14,7 @@
 #include "rectdetails.h"
 #include "circledetails.h"
 #include "pointszone.h"
+#include "visualization.h"
 using namespace arma;
 using namespace GEOM_FADE2D;
 class GraphicScene : public QGraphicsScene
@@ -35,6 +36,7 @@ public:
     bool find_nearest_point(QPointF p);
     QColor interpolate(double value, double max);
     QColor interpolate1(double ratio, double max);
+    QColor interpolate2(double ratio);
     mat nodesD, trsD;
     QVector<std::pair<double, double>> nodes_vec;
     QVector<double>  trs_vec;
@@ -75,7 +77,7 @@ public slots:
     void EnterPointsZone();
     QPointF calcMidGradPoint(QPointF Pmax,QPointF Pmin,double vmax,double vmid);
     void RefinementMesh(mat trs,mat v, mat nds, double K);
-    void potential_line_plot(QList<QPointF> temppoints, double Vecv);
+    void potential_line_plot(QList<QPolygonF> poly_list, QVector<double> Vecv);
     void potential_line_calc(mat v, mat nds, mat trs);
     void Sort_Vpoints (QVector< QPointF > temppoints, QPolygonF &poly);
     static bool sortonx_up(const QPointF &p1, const QPointF &p2);
@@ -95,6 +97,8 @@ private:
     QPointF firstPoint;    
     rectDetails *rectDet;
     circledetails *circleDet;
+    visualization *visual;
+
     QMap<int,int> map;
 
     bool selectitem_b=false;

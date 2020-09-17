@@ -31,7 +31,8 @@ SOURCES += \
     tr_object.cpp \
     rectdetails.cpp \
     circledetails.cpp \
-    pointszone.cpp
+    pointszone.cpp \
+    visualization.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -40,13 +41,15 @@ HEADERS += \
     tr_object.h \
     rectdetails.h \
     circledetails.h \
-    pointszone.h
+    pointszone.h \
+    visualization.h
 
 FORMS += \
         mainwindow.ui \
     rectdetails.ui \
     circledetails.ui \
-    pointszone.ui
+    pointszone.ui \
+    visualization.ui
 RC_ICONS = triangle.ico
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/x64/ -lfade2D_x64_v141_Release
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/x64/ -lfade2D_x64_v141_Debug

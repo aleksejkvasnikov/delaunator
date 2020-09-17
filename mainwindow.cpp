@@ -360,7 +360,7 @@ void MainWindow::doFEMcalc(bool mode)
            del1=abs(matrix_C(0,1)-C(0,1))/abs(matrix_C(0,1));
            del2=abs(matrix_C(1,1)-C(1,1))/abs(matrix_C(1,1));
            matrix_C=C;
-           v_F = v12;
+           v_F = v11;
            bcs_F = bcs;
            trs_F = trs;
            nodes_F = nodes;
@@ -390,6 +390,7 @@ void MainWindow::doFEMcalc(bool mode)
             mat vii;
             vii = solve(mat(a),f_temp);
 
+
             double Wii, Cii;
             Wii = get_tri2d_cap(vii, nr_nodes, nr_trs, nodes, trs, domains);
             Cii = 2 * Wii;
@@ -417,7 +418,11 @@ void MainWindow::doFEMcalc(bool mode)
                 C(j,i) = Cij;
             }
         }
-        scene->show_mesh(vv, nr_trs, nodes, trs,ui->ReMeshEdit->text().toDouble(),domains);
+        //scene->show_mesh(vv, nr_trs, nodes, trs,ui->ReMeshEdit->text().toDouble(),domains);
+        v_F =vv;
+        nodes_F = nodes;
+        trs_F = trs;
+
         qDebug()<<"trs="<<nr_trs;
         C=C*1e12;
         //C.save("C.txt",arma_ascii);
