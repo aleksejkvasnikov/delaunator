@@ -23,6 +23,7 @@ class GraphicScene : public QGraphicsScene
 public:
     int getMapData(int key);
     QVector<QList <QPointF> *> getInside(){return  inside_points;}
+    int getInsideSize () {return inside_points.size();}
     QVector<QList <QPointF> *> getOutside(){return outside_points;}
     QVector<QList <QPointF> *> getDielectric(){return dielectric_points;}
     void SetInside(QVector<QList <QPointF> *> inside){inside_points=inside;}
@@ -42,9 +43,6 @@ public:
     QVector<double>  trs_vec;
     std::vector<std::pair<double, double>> bcs_vec;
     std::vector<std::pair<double, double>> domains;
-    QVector <std::pair<double,double>> calczone_nodes;
-    QVector<QList <double>> calc_trs;
-    QList<double> calczone_trs;
     virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
     virtual void mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent);
@@ -81,7 +79,7 @@ public slots:
     void potential_line_calc(mat v, mat nds, mat trs);
     void Sort_Vpoints (QVector< QPointF > temppoints, QPolygonF &poly);
     static bool sortonx_up(const QPointF &p1, const QPointF &p2);
-    static bool sortonx_down(const QPointF &p1, const QPointF &p2);
+    static bool sort_right_rotate(const QPointF &p1, const QPointF &p2, const QPointF &p3);
     float distance(const QPointF& pt1, const QPointF& pt2);
     QPointF getLineStart(const QPointF& pt1, const QPointF& pt2);
     QPointF getLineEnd(const QPointF& pt1, const QPointF& pt2);
@@ -110,9 +108,10 @@ private:
     QList <tr_object> objects;
     QList <QPointF> m_points;
     QVector<QList <QPointF> *> outside_points;
+    QVector<QList <QPointF> *> inside_zero_points;
     QVector<QList <QPointF> *> dielectric_points;
     QVector<QList <QPointF> *> inside_points;
-    QVector<QList <QPointF> *> calczone_points;
+    QVector<QList <QPointF> *> gr_cond_points;
     QList <QGraphicsItem *> m_items;
 };
 

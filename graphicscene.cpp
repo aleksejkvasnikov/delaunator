@@ -306,6 +306,8 @@ void GraphicScene::drawFinalRect()
     QPen red_pen(Qt::red,Qt::DashLine);
     QPen blue_pen(Qt::blue,Qt::DashLine);
     QPen green_pen(Qt::green,Qt::DashLine);
+    QPen dark_green(Qt::darkGreen,Qt::DashLine);
+    QPen dark_blue (Qt::darkBlue,Qt::DashLine);
     QRectF qrf = rect->rect();
     // LOOK HERE 16.10
     QList <QPointF> *temp_points = new QList <QPointF>;
@@ -319,15 +321,16 @@ void GraphicScene::drawFinalRect()
         inside_points.push_back(temp_points);
     } else if(rectDet->getStatus()==0){
         qDebug () << "outside";
-        rect->setPen(red_pen);
+        rect->setPen(dark_blue);
         outside_points.push_back(temp_points);
     }
     else if(rectDet->getStatus()==2) {
-        rect->setPen(green_pen);
+        rect->setPen(red_pen);
         dielectric_points.push_back(temp_points);
     }
     else {
-        calczone_points.push_back(temp_points);
+        rect->setPen(dark_green);
+        gr_cond_points.push_back(temp_points);
     }
     rectDet->hide();
 }
@@ -969,9 +972,6 @@ void GraphicScene::RefinementMesh(mat trs, mat v, mat nds, double K) //уточ�
     nodesD.set_size(temp_trs.size()*3, 2);
     trsD.set_size(temp_trs.size(),3);
     domains.clear();
-    calc_trs.clear();
-    calczone_nodes.clear();
-    calczone_trs.clear();
 
 
 
@@ -1111,49 +1111,7 @@ void GraphicScene::RefinementMesh(mat trs, mat v, mat nds, double K) //уточ�
     }
     // //////////////////////////////////////////////////////////////////////////////////
 
-    // Узлы в зоне расчета /////////////////////////////////////////////////////////////
-    for (int i=0;i<calczone_points.size();i++)
-    {
-        for (int j=0;j<nodes_vec.size();j++)
-        {
-            if(nodes_vec.at(j).first>=calczone_points.at(i)->at(0).x() && nodes_vec.at(j).first<=calczone_points.at(i)->at(1).x())
-            {
-                if (nodes_vec.at(j).second<=calczone_points.at(i)->at(3).y() && nodes_vec.at(j).second>=calczone_points.at(i)->at(0).y())
-                    calczone_nodes.push_back(nodes_vec.at(j));
-            }
-           // calcpoints.push_back(calc_zone_points);
 
-        }
-
-    for(int k=0;k<trs_vec.size()/3; k++){
-        bool inside=false;
-    for (int j=0;j<calczone_nodes.size();j++)
-    {
-        if (nodes_vec.at(trs_vec.at(3*k))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-        else if (nodes_vec.at(trs_vec.at(3*k+1))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-        else if (nodes_vec.at(trs_vec.at(3*k+2))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-    }
-    if (inside==true)
-    {
-    calczone_trs.push_back(trs_vec.at(3*k));
-    calczone_trs.push_back(trs_vec.at(3*k+1));
-    calczone_trs.push_back(trs_vec.at(3*k+2));
-    }
-    }
-    calc_trs.push_back(calczone_trs);
-    calczone_nodes.clear();
-    calczone_trs.clear();
-    }
-    emit RefinementDone(temp_trs.size(),nodes_vec.size());
 
 }
 
@@ -1187,8 +1145,8 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
     QVector<double> Ve_all;
     QPen pen1(Qt::red);
     QPen pen2(Qt::green);
-    int N = trs.n_rows;
-    //double Ve=0.7;
+    //int N = trs.n_rows;
+   // double Ve=0.8;
     for (double Ve = 0.1; Ve < 0.99; Ve+=0.1)
     {
         temppoints.clear();
@@ -1223,7 +1181,7 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y23 = (y2 + l23 * y3) / (1 + l23);
             temppoints.append(QPointF(x13,y13));
             temppoints.append(QPointF(x23,y23));
-            //this->addLine(x13,y13,x23,y23);
+            this->addLine(x13,y13,x23,y23);
             break;
         case 10:
         case 101:
@@ -1237,7 +1195,7 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y32 = (y3 + l32 * y2) / (1 + l32);
             temppoints.append(QPointF(x12,y12));
             temppoints.append(QPointF(x32,y32));
-            //this->addLine(x12,y12,x32,y32);
+            this->addLine(x12,y12,x32,y32);
             break;
         case 100:
         case 11:
@@ -1251,7 +1209,7 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y31 = (y3 + l31 * y1) / (1 + l31);
             temppoints.append(QPointF(x21,y21));
             temppoints.append(QPointF(x31,y31));
-            //this->addLine(x21,y21,x31,y31);
+            this->addLine(x21,y21,x31,y31);
             break;
         }
 
@@ -1261,97 +1219,96 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
     poly.clear();
     Sort_Vpoints(temppoints,poly);
 
+    for (int i=0; i<temppoints.size(); i++)
+    {
+        QPen pen (interpolate2(Ve));
+        this->addEllipse(temppoints.at(i).x() - 1, temppoints.at(i).y() - 1, 1*2, 1*2,pen);
+    }
+
         QPen pen3 (Qt::black);
         poly_list.push_back(poly);
         Ve_all.push_back(Ve);
-    //this->addPolygon(poly,Qt::NoPen,interpolate1(Ve,1));
-   }
+    //this->addPolygon(poly,Qt::NoPen,interpolate2(Ve));
+        /*QPen pen (Qt::blue);
+        for (int i=0; i<poly.size(); i++)
+        {
+        QGraphicsTextItem *x_p = this->addText(QString::number(i));
+        x_p->setDefaultTextColor(Qt::black);
+        x_p->setPos(poly.at(i));
+        this->addEllipse(poly.at(i).x() - 1, poly.at(i).y() - 1, 1*2, 1*2,pen);
+        }*/
+  }
 
-    potential_line_plot(poly_list, Ve_all);
+    //potential_line_plot(poly_list, Ve_all);
 }
+
 
 void GraphicScene::Sort_Vpoints(QVector<QPointF> p, QPolygonF &poly)
 {
-    QPointF Xmax, Xmin;
-    Xmax = p.at(0);
+    std::sort(p.begin(),p.end(),sortonx_up);
+    auto last = std::unique (p.begin(),p.end());
+    p.erase(last,p.end());    
+
+    QPointF Xmin;
     Xmin = p.at(0);
-    int radius = 1;
-    QPen pen (Qt::blue);
-    QPen pen1 (Qt::green);
-    QPen pen2 (Qt::red);
-    for (int i=0; i<p.size(); i++)
-    {
-        //qDebug()<<p.at(i).x() << p.at(i).y();
-       // this->addEllipse(p.at(i).x() - radius, p.at(i).y() - radius, radius*2, radius*2,pen);
-        if (p.at(i).x() > Xmax.x())
-            Xmax = p.at(i);
-        else if (p.at(i).x() == Xmax.x())
-            if (p.at(i).y() > Xmax.y())
-                Xmax = p.at(i);
-        if (p.at(i).x() < Xmin.x())
-            Xmin = p.at(i);
-        else if (p.at(i).x() == Xmin.x())
-            if (p.at(i).y() < Xmin.y())
-                Xmin = p.at(i);
-    }
+    int h=0;
+     for (int i=0; i<p.size(); i++)
+     {
+         if (p.at(i).x() < Xmin.x())
+         {
+             Xmin = p.at(i);
+             h = i;
+         }
+         else if (p.at(i).x() == Xmin.x())
+             if (p.at(i).y() < Xmin.y())
+             {
+                 Xmin = p.at(i);
+                 h = i;
+             }
+     }
 
-    QVector<QPointF> left;
-    QVector<QPointF> right;
+     poly.append(Xmin);
+     p.remove(h);
+     p.append(Xmin);
 
-    left.append(Xmin);
-    right.append(Xmax);
-    for (int i=0; i<p.size(); i++)
-    {
-        double rez;
-        rez = (p.at(i).x() - Xmin.x()) * (Xmax.y() - Xmin.y()) -
-                (Xmax.x()-Xmin.x()) * (p.at(i).y() - Xmin.y());
-     //   qDebug() << rez;
-        if (rez > 0)
-            left.push_back(p.at(i));
-
-        else if (rez < 0)
-            right.push_back(p.at(i));
-       /* else
-            left.push_back(p.at(i));*/
-    }
-    int A1 = right.size();
-    int A2 = left.size();
-    std::sort (left.begin(), left.end(), sortonx_up);
-    std::sort (right.begin(), right.end(), sortonx_down);
-    int B1 = right.size();
-    int B2 = left.size();
-    //poly.append(left);
-   // qDebug() << "__________________";
-    for (int i=0; i<left.size(); i++)
-    {
-        poly.append(left.at(i));
-        qDebug()<<left.at(i).x() << left.at(i).y();
-        //this->addEllipse(left.at(i).x() - radius, left.at(i).y() - radius, radius*2, radius*2,pen1);
-    }
-    qDebug() << "__________________";
-    for (int i=0; i<right.size(); i++)
-    {
-        poly.append(right.at(i));
-       qDebug() << right.at(i).x() << right.at(i).y();
-      // this->addEllipse(right.at(i).x() - radius, right.at(i).y() - radius, radius*2, radius*2,pen2);
-    }
-   // this->addEllipse(Xmax.x() - radius, Xmax.y() - radius, radius*2, radius*2,pen);
-   // this->addEllipse(Xmin.x() - radius, Xmin.y() - radius, radius*2, radius*2,pen);
+     while (true)
+     {
+         int right = 0;
+         for (int i=0; i<p.size(); i++)
+         {
+             if (sort_right_rotate(poly.at(poly.size()-1),p.at(right),p.at(i)))
+                 right = i;
+         }
+         if (p.at(right) == poly.at(0))
+             break;
+         else
+         {
+             poly.append(p.at(right));
+             p.remove(right);
+         }
+     }
 
 }
-
 bool GraphicScene::sortonx_up(const QPointF &p1, const QPointF &p2)
 {
-    return (p1.x() < p2.x() || (p1.x() == p2.x() && p1.y() < p2.y()));
+    int x1 = round(p1.x()); int x2 = round(p2.x());
+    int y1 = round(p1.y()); int y2 = round(p2.y());
+    if (x1 == x2)
+        return (y1 < y2);
+    return (x1 < x2);
 }
 
-bool GraphicScene::sortonx_down(const QPointF &p1, const QPointF &p2)
+bool GraphicScene::sort_right_rotate(const QPointF &a, const QPointF &b, const QPointF &c)
 {
-    return (p1.x() > p2.x() || (p1.x() == p2.x() && p1.y() > p2.y()));
+    QPointF p1,p2;
+    p1 = b - a;
+    p2 = c - a;
+    double det;
+    det = p1.x()*p2.y()-p2.x()*p1.y();
+    if (det < 0)
+        return true;
+    return false;
 }
-
-
-
 
 
 
@@ -1879,6 +1836,20 @@ void GraphicScene::doTriangles()
             }
         }
     }
+    if(gr_cond_points.size()>0){ // redo
+        for(int j =0; j<gr_cond_points.size(); j++){
+            for( int i=0; i<gr_cond_points.at(j)->count(); ++i )
+            {
+                    if(i==gr_cond_points.at(j)->count()-1){
+                        this->addLine(gr_cond_points.at(j)->at(i).x(),gr_cond_points.at(j)->at(i).y(),
+                                      gr_cond_points.at(j)->at(0).x(),gr_cond_points.at(j)->at(0).y(), pen);
+                    }
+                    else
+                    this->addLine(gr_cond_points.at(j)->at(i).x(),gr_cond_points.at(j)->at(i).y(),
+                                  gr_cond_points.at(j)->at(i+1).x(),gr_cond_points.at(j)->at(i+1).y(), pen);
+            }
+        }
+    }
 
     /*for( int i=0; i<m_points.count(); ++i )
     {
@@ -1926,6 +1897,17 @@ void GraphicScene::doTriangles()
         {
             vPoints2.push_back(Point2(inside_points.at(i)->at(j).toPoint().x(),inside_points.at(i)->at(j).toPoint().y()));
             //std::cout << Point2(inside_points.at(i)->at(j).x(), inside_points.at(i)->at(j).y()) << std::endl;
+        }
+        all_Inside_points.push_back(vPoints2);
+    }
+    for( int i=0; i<gr_cond_points.size(); ++i )
+        {
+        std::vector<Point2> vPoints2;
+        vPoints2.clear();
+        for( int j=0; j<gr_cond_points.at(i)->count(); ++j )
+        {
+            vPoints2.push_back(Point2(gr_cond_points.at(i)->at(j).toPoint().x(),gr_cond_points.at(i)->at(j).toPoint().y()));
+            //std::cout << Point2(gr_cond_points.at(i)->at(j).x(), gr_cond_points.at(i)->at(j).y()) << std::endl;
         }
         all_Inside_points.push_back(vPoints2);
     }
@@ -2014,7 +1996,8 @@ void GraphicScene::doTriangles()
         for(size_t i=0;i<vZoneT.size();++i)
     {
         for(int j=0; j<3; j++){
-            if(nodes_vec.indexOf(std::make_pair(vZoneT[i]->getCorner(j)->x(), vZoneT[i]->getCorner(j)->y()))==-1){
+            if(nodes_vec.indexOf(std::make_pair(vZoneT[i]->getCorner(j)->x(), vZoneT[i]->getCorner(j)->y()))==-1)
+            {
                 nodes_vec.push_back(std::make_pair(vZoneT[i]->getCorner(j)->x(), vZoneT[i]->getCorner(j)->y()));
                 trs_vec.push_back(k);
 
@@ -2127,6 +2110,60 @@ void GraphicScene::doTriangles()
 
                     }
                 }
+
+                for( int z=0; z<gr_cond_points.size(); ++z )
+                {
+                    for( int q=0; q<gr_cond_points.at(z)->count(); ++q )
+                    {
+                      //  qDebug() << z << q << " inside";
+                        double x1,x2,y1,y2;
+                        if(q<gr_cond_points.at(z)->count()-1){
+                                x1 = gr_cond_points.at(z)->at(q).x();
+                                x2 = gr_cond_points.at(z)->at(q+1).x();
+                                y1 = gr_cond_points.at(z)->at(q).y();
+                                y2 = gr_cond_points.at(z)->at(q+1).y();
+                        } else {
+                                x1 = gr_cond_points.at(z)->at(q).x();
+                                x2 = gr_cond_points.at(z)->at(0).x();
+                                y1 = gr_cond_points.at(z)->at(q).y();
+                                y2 = gr_cond_points.at(z)->at(0).y();
+
+                        }
+                        //if(((vZoneT[i]->getCorner(j)->x() == x1) && (vZoneT[i]->getCorner(j)->y() >= y1)
+                          //      && (vZoneT[i]->getCorner(j)->y() <= y2)) ||
+                            //    ((vZoneT[i]->getCorner(j)->y() == y1) && (vZoneT[i]->getCorner(j)->x() >= x1)
+                              //                                  && (vZoneT[i]->getCorner(j)->x() <= x2)))
+                        //qDebug() << (vZoneT[i]->getCorner(j)->x()-x1)*(y2-y1) << (vZoneT[i]->getCorner(j)->y()-y1)*(x2-x1) << k;
+                        double x = vZoneT[i]->getCorner(j)->x();
+                        double y = vZoneT[i]->getCorner(j)->y();
+
+                        double t = ((x-x1)*(x2-x1)+(y-y1)*(y2-y1))/
+                                (pow((x2-x1),2)+pow((y2-y1),2));
+                        if(t<0) t=0;
+                        else if(t>1) t = 1;
+
+                        double l = sqrt(pow(x1 - x + (x2-x1)*t,2) +
+                                        pow(y1 - y + (y2-y1)*t,2));
+
+                        //if(abs((vZoneT[i]->getCorner(j)->x()-x1)*(y2-y1)-(vZoneT[i]->getCorner(j)->y()-y1)*(x2-x1)) <= 0.001
+                        //        && ((vZoneT[i]->getCorner(j)->x()<=x2 && vZoneT[i]->getCorner(j)->x()>=x1) ||
+                        //            (vZoneT[i]->getCorner(j)->x()>=x2 && vZoneT[i]->getCorner(j)->x()<=x1)))
+                        //{
+                       // qDebug() << x1 << y1 << x2 << y2 << x << y << pow(x1 - x + (x2-x1)*t,2) << pow(y1 - y + (y2-y1)*t,2) << t << " l="<< l << " inside " << k;
+
+                        if(l<1){
+                           // QGraphicsTextItem *zero_p = this->addText(QString::number(k));
+                           // zero_p->setDefaultTextColor(Qt::blue);
+                           // zero_p->setPos(vZoneT[i]->getCorner(j)->x(), vZoneT[i]->getCorner(j)->y());
+                            bcs_vec.push_back(std::make_pair(k,0));
+                            map[k]=z;
+                            //qDebug()<<map[k]<<k;
+                            //qDebug() << k << " inside"; //WATCH HERE REDO!!!!!!!!!!!!!
+                            break;
+                        }
+
+                    }
+                }
                 /*for( int z=0; z<m_points.count(); ++z )
                 {
                     if(abs(m_points.at(z).x()-vZoneT[i]->getCorner(j)->x())<=2 ||
@@ -2215,51 +2252,7 @@ void GraphicScene::doTriangles()
             qDebug()<<domains.at(i);
 
     }
-    // //////////////////////////////////////////////////////////////////////////////////
 
-    // Узлы в зоне расчета /////////////////////////////////////////////////////////////
-    for (int i=0;i<calczone_points.size();i++)
-    {
-        for (int j=0;j<nodes_vec.size();j++)
-        {
-            if(nodes_vec.at(j).first>=calczone_points.at(i)->at(0).x() && nodes_vec.at(j).first<=calczone_points.at(i)->at(1).x())
-            {
-                if (nodes_vec.at(j).second<=calczone_points.at(i)->at(3).y() && nodes_vec.at(j).second>=calczone_points.at(i)->at(0).y())
-                    calczone_nodes.push_back(nodes_vec.at(j));
-            }
-           // calcpoints.push_back(calc_zone_points);
-
-        }
-
-    for(int k=0;k<trs_vec.size()/3; k++){
-        bool inside=false;
-    for (int j=0;j<calczone_nodes.size();j++)
-    {
-        if (nodes_vec.at(trs_vec.at(3*k))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-        else if (nodes_vec.at(trs_vec.at(3*k+1))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-        else if (nodes_vec.at(trs_vec.at(3*k+2))==calczone_nodes.at(j))
-        {
-            inside=true;
-        }
-    }
-    if (inside==true)
-    {
-    calczone_trs.push_back(trs_vec.at(3*k));
-    calczone_trs.push_back(trs_vec.at(3*k+1));
-    calczone_trs.push_back(trs_vec.at(3*k+2));
-    }
-    }
-    calc_trs.push_back(calczone_trs);
-    calczone_nodes.clear();
-    calczone_trs.clear();
-    }
-    //qDebug()<<map;
 
     std::vector<std::pair<double, double>> bcs_vec_temp;
     bcs_vec_temp = bcs_vec;

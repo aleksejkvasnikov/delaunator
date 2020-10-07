@@ -178,7 +178,7 @@ void MainWindow::doFEMcalc(bool mode)
     //cout << "\n--------------\n";
    //cout << f;
     //cout << "\n--------------\n";
-    if (scene->calc_trs.size()==0)
+    if (scene->getInsideSize() == 1)
     {
    mat v;
 
@@ -216,41 +216,11 @@ void MainWindow::doFEMcalc(bool mode)
 
         emit result_text(C_F,nr_trs_F,nr_nodes_F,times, L, Z1);
     }
-    if (scene->calc_trs.size()==1)
+
+    if ( scene->getInsideSize() == 2)
     {
-        mat zone_trs;
-        zone_trs.clear();
-        zone_trs.set_size(scene->calc_trs.at(0).size()/3,3);
-        for (int i=0; i<scene->calc_trs.at(0).size()/3;i++){
-            zone_trs(i,0)=scene->calc_trs.at(0).at(3*i);
-            zone_trs(i,1)=scene->calc_trs.at(0).at(3*i+1);
-            zone_trs(i,2)=scene->calc_trs.at(0).at(3*i+2);
-        }
-        int nr_zone_trs=zone_trs.n_rows;
-        mat v;
-         v = solve(mat(a),f);
-       // cout << v;
-         get_tri2d_cap(v, nr_nodes, nr_zone_trs, nodes, zone_trs,domains);
-    }
-    if (scene->calc_trs.size()==2)
-    {
-        mat trs_1;
-        mat trs_2;
-        trs_1.clear();
-        trs_1.set_size(scene->calc_trs.at(0).size()/3,3);
-        for (int i=0; i<scene->calc_trs.at(0).size()/3;i++){
-            trs_1(i,0)=scene->calc_trs.at(0).at(3*i);
-            trs_1(i,1)=scene->calc_trs.at(0).at(3*i+1);
-            trs_1(i,2)=scene->calc_trs.at(0).at(3*i+2);
-        }
-        trs_2.clear();
-        trs_2.set_size(scene->calc_trs.at(1).size()/3,3);
-        for (int i=0; i<scene->calc_trs.at(1).size()/3;i++){
-            trs_2(i,0)=scene->calc_trs.at(1).at(3*i);
-            trs_2(i,1)=scene->calc_trs.at(1).at(3*i+1);
-            trs_2(i,2)=scene->calc_trs.at(1).at(3*i+2);
-        }
-        qDebug()<<"tut";
+
+        //qDebug()<<"tut";
         mat f1,f2;
         f1=f;
         f2=f;
@@ -269,8 +239,6 @@ void MainWindow::doFEMcalc(bool mode)
         v11 = solve(mat(a),f1);
         v22 = solve(mat(a),f2);
         v12 = solve(mat(a),f);
-        int nr_trs_1=trs_1.n_rows;
-        int nr_trs_2=trs_2.n_rows;
         //qDebug()<<"c11'";
         double W11,W12,W22;
        W11 = get_tri2d_cap(v11, nr_nodes, nr_trs, nodes, trs,domains);
@@ -282,7 +250,7 @@ void MainWindow::doFEMcalc(bool mode)
        W22 = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
        W12 = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
 
-       qDebug()<<W11<<W22<<W12;
+       //qDebug()<<W11<<W22<<W12;
        double C11, C12, C22;
        C11 = 2 * W11;
        C22 = 2 * W22;
@@ -300,59 +268,7 @@ void MainWindow::doFEMcalc(bool mode)
     //   qDebug()<<C12<<", "<<C22;
    //    qDebug()<<endl;
   //     cout<<C;
-
-       double W11l,W12l,W22l;
-       W11l = get_tri2d_cap(v11, nr_nodes, nr_trs, nodes, trs,domains);
-       W22l = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
-       W12l = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
-
-       domains.zeros();
-       double C011, C012, C022;
-       C011 = 2 * W11l;
-       C022 = 2 * W22l;
-       C012 = W12l - (C011+C022)/2;
-       mat C0;
-
-       C0.set_size(2,2);
-       C0(0,0) = C011;
-       C0(0,1) = C012;
-       C0(1,0) = C012;
-       C0(1,1) = C022;
-       C0 = inv(C0);
-
-       mat L(2,2);
-       double eps0 = (1.0/(36.0*M_PI))*pow(10.0,-9);
-       double mu0 = 4.0 * M_PI * pow(10.0, -7);
-       L = eps0*mu0*C0;
-       //cout<<L;
-
-       mat Z;
-       Z = L/C;
-      // Z = sqrt (Z);
-      std::complex<double> z11(Z(0,0),0);
-      std::complex<double> z12(Z(0,1),0);
-      std::complex<double> z21(Z(1,0),0);
-      std::complex<double> z22(Z(1,1),0);
-      //cout << "\n--------------\n";
-      //cout<<z11<<z12;
-      //cout<<z21<<z22;
-      //cout << "\n--------------\n";
-      z11=sqrt(z11);
-       z12=sqrt(z12);
-        z21=sqrt(z21);
-         z22=sqrt(z22);
-          std::complex<double> ze1;
-           std::complex<double> zo1;
-           std::complex<double> ze2;
-            std::complex<double> zo2;
-           ze1 = z11+z12;
-           zo1 = z11-z12;
-           ze2 = z22+z21;
-           zo2 = z22-z21;
-    //cout<<ze1<<zo1;
-    //cout<<ze2<<zo2;
-    //cout << "\n--------------\n";
-
+        mat L(2,2,fill::zeros);
 
        if (!mode){
            //cout << matrix_C;
@@ -374,10 +290,10 @@ void MainWindow::doFEMcalc(bool mode)
        }
 
     }
-    else if (scene->calc_trs.size()>2) {
+    else if (scene->getInsideSize() > 2) {
         double N;
         mat vv;
-        N=scene->calc_trs.size();
+        N=scene->getInsideSize();
         mat C(N,N,fill::zeros);
         for (int i=0; i<N; i++)
         {
@@ -437,13 +353,16 @@ qDebug("Time elapsed: %d ms", time.elapsed());
 
 mat MainWindow::CmpElMtx_Bandeson(mat xy, double elInx)
 {
-    double eps;
+    double eps = 1;
+    if (!scene->domains.empty())
+    {
     if(scene->domains.at(elInx).second==2)
         eps=ui->dielectric_edit->text().toDouble();
     else if (scene->domains.at(elInx).second==3)
         eps=ui->dielectric_edit_2->text().toDouble();
     else
         eps=1;
+    }
 
     mat s1,s2,s3;
     s1=xy.col(2)-xy.col(1);
@@ -493,10 +412,8 @@ mat MainWindow::CmpElMtx_Bandeson(mat xy, double elInx)
         }
 
     return Ae;
-
-
-
 }
+
 double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs, mat domains)
 {
     qDebug()<<nr_trs;
@@ -561,6 +478,7 @@ double MainWindow::get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds,
     qDebug() << "L = " << L;
     double Z1 = pow((L/C),0.5);
     qDebug() << "Z1 = " << Z1;
+    //qDebug() << scene->getInsideSize();
     text="C = "+QString::number(C);
     ui->textBrowser->setText(text);
     return U;
@@ -599,8 +517,9 @@ void MainWindow::FEM_Bandeson()
     no2xy = nodes;
     el2no  = trs;
 
-    if (scene->calc_trs.size()<2)
+    if (scene->getInsideSize() == 1)
     {
+
     QVector<double> TempExt;
     QVector<double> TempInt;
     for (int i =0; i < scene->bcs_vec.size(); i++){
@@ -621,24 +540,6 @@ void MainWindow::FEM_Bandeson()
         noExt(i) = TempExt.at(i);
     }
 
-    /*double d1,d2,d3,d4,d5,d6,d7,d8;
-    d1 = no2xy.n_rows;
-    d2 = no2xy.n_cols;
-    d3 = el2no.n_rows;
-    d4 = el2no.n_cols;
-    d5 = noInt.n_rows;
-    d6 = noInt.n_cols;
-    d7 = noExt.n_rows;
-    d8 = noExt.n_cols;
-    qDebug()<<"no2xy"<<d1<<d2;
-    qDebug()<<"el2no"<<d3<<d4;
-    qDebug()<<"noInt"<<d5<<d6;
-    qDebug()<<"noExt"<<d7<<d8;
-    /*noExt.load("noExt.txt");
-    noInt.load("noInt.txt");
-    no2xy.load("no2xy.txt");
-    el2no.load("el2no.txt");*/
-
 
     double W;
     W = W_Bandeson(noExt,noInt,no2xy,el2no);
@@ -655,7 +556,8 @@ void MainWindow::FEM_Bandeson()
     L = L*1e6;
         emit result_text(C,nr_trs_F,nr_nodes_F, times, L, Z1);
     }
-    else if (scene->calc_trs.size()==2)
+
+    else if (scene->getInsideSize() == 2)
     {
         QVector<double> TempExt;
         QVector<double> TempInt;
@@ -741,7 +643,7 @@ void MainWindow::FEM_Bandeson()
         noExt.clear();
         double N;
         mat vv;
-        N=scene->calc_trs.size();
+        N=scene->getInsideSize();
         mat C(N,N,fill::zeros);
         for (int i=0; i<N; i++)
         {
@@ -841,7 +743,7 @@ double MainWindow::W_Bandeson(mat noExt,mat noInt,mat no2xy,mat el2no)
     mat A(noNum, noNum, fill::zeros);
     mat b(noNum, 1, fill::zeros);
 
-    for (int elIdx=0; elIdx<elNum; elIdx++)
+    for (int elIdx = 0; elIdx < elNum; elIdx++)
     {
         mat no, xy;
         no=el2no.col(elIdx);

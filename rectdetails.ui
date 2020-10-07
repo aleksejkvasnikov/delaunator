@@ -30,7 +30,7 @@
    <item row="10" column="1">
     <widget class="QRadioButton" name="chargedButt">
      <property name="text">
-      <string>Conductor line </string>
+      <string>Conductor</string>
      </property>
     </widget>
    </item>
@@ -58,7 +58,7 @@
    <item row="10" column="0">
     <widget class="QRadioButton" name="groundedButt">
      <property name="text">
-      <string>Grounded</string>
+      <string>Shield</string>
      </property>
     </widget>
    </item>
@@ -99,7 +99,7 @@
    <item row="11" column="1">
     <widget class="QRadioButton" name="calcButton">
      <property name="text">
-      <string>Zone selection</string>
+      <string>Grounded conductor</string>
      </property>
     </widget>
    </item>
