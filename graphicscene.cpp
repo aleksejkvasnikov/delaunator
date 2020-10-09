@@ -14,6 +14,7 @@
 #include "visualization.h"
 #include <QPainter>
 #include <QtAlgorithms>
+#include <QMap>
 using namespace arma;
 // нажимаем new,
 // галочкой ставим режим
@@ -708,8 +709,8 @@ void GraphicScene::show_mesh(mat v, double nr_trs, mat nds, mat trs, double K, m
 QColor GraphicScene::interpolate(double value, double max){
     //if(value <0) value = 0;
     double ratio = value/max;
-    QColor start = Qt::white;
-    QColor end = Qt::black;
+    QColor start = Qt::red;
+    QColor end = Qt::blue;
     int r = (int)(ratio*start.red() + (1-ratio)*end.red());
     int g = (int)(ratio*start.green() + (1-ratio)*end.green());
     int b = (int)(ratio*start.blue() + (1-ratio)*end.blue());
@@ -972,6 +973,7 @@ void GraphicScene::RefinementMesh(mat trs, mat v, mat nds, double K) //уточ�
     nodesD.set_size(temp_trs.size()*3, 2);
     trsD.set_size(temp_trs.size(),3);
     domains.clear();
+    gr_cond_points.clear();
 
 
 
@@ -1120,6 +1122,7 @@ void GraphicScene::potential_line_plot(QList<QPolygonF> poly_list, QVector<doubl
   this->clear();
     QPolygonF out;
     QList<QPolygonF> inside;
+    QList<QPolygonF> gr_c_p;
     out.append(outside_points.at(0)->toVector());
     for (int i=0; i<inside_points.size(); i++)
     {
@@ -1128,17 +1131,24 @@ void GraphicScene::potential_line_plot(QList<QPolygonF> poly_list, QVector<doubl
 
     QPen line_pen (Qt::darkGray, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     QPen bord_pen (Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen di_pen (Qt::black, 0, Qt::DashLine, Qt::RoundCap, Qt::RoundJoin);
     this->addPolygon(out,bord_pen,interpolate2(0));
+
     for (int i=0; i<poly_list.size();i++)
         this->addPolygon(poly_list.at(i),line_pen,interpolate2(Vecv.at(i)));
     for (int i=0; i<inside.size();i++)
         this->addPolygon(inside.at(i),bord_pen,Qt::white);
+    for (int i=0; i<gr_cond_points.size();i++)
+        this->addPolygon(gr_cond_points.at(i)->toVector(),bord_pen,Qt::white);
+    for (int i=0; i<dielectric_points.size();i++)
+        this->addPolygon(dielectric_points.at(i)->toVector(),di_pen,Qt::NoBrush);
 
 
 }
 
 void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
 {
+    QMap<std::pair<float,float>,std::pair<int,int>> p_trs;
     QVector<QPointF> temppoints;
     QPolygonF poly;
     QList<QPolygonF> poly_list;
@@ -1146,11 +1156,11 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
     QPen pen1(Qt::red);
     QPen pen2(Qt::green);
     //int N = trs.n_rows;
-   // double Ve=0.8;
+    //double Ve=0.9;
     for (double Ve = 0.1; Ve < 0.99; Ve+=0.1)
     {
         temppoints.clear();
-    for (int i=0; i<trs.n_rows; i++)
+    for (int i=0; i < trs.n_rows; i++)
     {
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         double V1=v(n1); double V2=v(n2); double V3=v(n3);
@@ -1181,6 +1191,17 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y23 = (y2 + l23 * y3) / (1 + l23);
             temppoints.append(QPointF(x13,y13));
             temppoints.append(QPointF(x23,y23));
+
+            if (p_trs[std::make_pair(x23,y23)].first == 0)
+                p_trs[std::make_pair(x23,y23)].first = i+1;
+            else
+                p_trs[std::make_pair(x23,y23)].second = i+1;
+
+            if (p_trs[std::make_pair(x13,y13)].first == 0)
+                p_trs[std::make_pair(x13,y13)].first = i+1;
+            else
+                p_trs[std::make_pair(x13,y13)].second = i+1;
+
             this->addLine(x13,y13,x23,y23);
             break;
         case 10:
@@ -1195,6 +1216,17 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y32 = (y3 + l32 * y2) / (1 + l32);
             temppoints.append(QPointF(x12,y12));
             temppoints.append(QPointF(x32,y32));
+
+            if (p_trs[std::make_pair(x12,y12)].first == 0)
+                p_trs[std::make_pair(x12,y12)].first = i+1;
+            else
+                p_trs[std::make_pair(x12,y12)].second = i+1;
+
+            if (p_trs[std::make_pair(x32,y32)].first == 0)
+                p_trs[std::make_pair(x32,y32)].first = i+1;
+            else
+                p_trs[std::make_pair(x32,y32)].second = i+1;
+
             this->addLine(x12,y12,x32,y32);
             break;
         case 100:
@@ -1209,6 +1241,17 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
             y31 = (y3 + l31 * y1) / (1 + l31);
             temppoints.append(QPointF(x21,y21));
             temppoints.append(QPointF(x31,y31));
+
+            if (p_trs[std::make_pair(x21,y21)].first == 0)
+                p_trs[std::make_pair(x21,y21)].first = i+1;
+            else
+                p_trs[std::make_pair(x21,y21)].second = i+1;
+
+            if (p_trs[std::make_pair(x31,y31)].first == 0)
+                p_trs[std::make_pair(x31,y31)].first = i+1;
+            else
+                p_trs[std::make_pair(x31,y31)].second = i+1;
+
             this->addLine(x21,y21,x31,y31);
             break;
         }
@@ -1216,38 +1259,66 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
 
     }
 
-    poly.clear();
-    Sort_Vpoints(temppoints,poly);
-
-    for (int i=0; i<temppoints.size(); i++)
+    Sort_Vpoints_new(temppoints,poly,p_trs);
+    Ve_all.push_back(Ve);
+    poly_list.push_back(poly);
+    if (temppoints.size()>1)
     {
-        QPen pen (interpolate2(Ve));
-        this->addEllipse(temppoints.at(i).x() - 1, temppoints.at(i).y() - 1, 1*2, 1*2,pen);
-    }
-
-        QPen pen3 (Qt::black);
-        poly_list.push_back(poly);
+        poly.clear();
+        Sort_Vpoints_new(temppoints,poly,p_trs);
         Ve_all.push_back(Ve);
-    //this->addPolygon(poly,Qt::NoPen,interpolate2(Ve));
-        /*QPen pen (Qt::blue);
+        poly_list.push_back(poly);
+    }
+    poly.clear();
+
+       /*   QPen pen3 (Qt::red,0,Qt::DashLine);
+        * for (int i=0; i<temppoints.size(); i++)
+        {
+            QPen pen (Qt::black);
+            this->addEllipse(temppoints.at(i).x() - 1, temppoints.at(i).y() - 1, 1*2, 1*2,pen);
+            //qDebug()<<p_trs[i];
+            //qDebug()<<p_trs[std::make_pair(temppoints.at(i).x(),temppoints.at(i).y())];
+        }
+
+    this->addPolygon(poly,pen3,interpolate2(Ve));
+        QPen pen (Qt::blue);
         for (int i=0; i<poly.size(); i++)
         {
         QGraphicsTextItem *x_p = this->addText(QString::number(i));
         x_p->setDefaultTextColor(Qt::black);
         x_p->setPos(poly.at(i));
+        QFont f ("times");
+        f.setPixelSize(4);
+        x_p->setFont(f);
         this->addEllipse(poly.at(i).x() - 1, poly.at(i).y() - 1, 1*2, 1*2,pen);
         }*/
+    /*for (int i=0; i<poly_list.size();i++)
+        this->addPolygon(poly_list.at(i),pen1,Qt::NoBrush);*/
+
   }
 
-    //potential_line_plot(poly_list, Ve_all);
+    potential_line_plot(poly_list, Ve_all);
 }
 
 
 void GraphicScene::Sort_Vpoints(QVector<QPointF> p, QPolygonF &poly)
 {
+
     std::sort(p.begin(),p.end(),sortonx_up);
     auto last = std::unique (p.begin(),p.end());
-    p.erase(last,p.end());    
+    p.erase(last,p.end());
+
+     QPen pen (Qt::blue);
+     for (int i=0; i<p.size(); i++)
+     {
+     QGraphicsTextItem *x_p = this->addText(QString::number(i));
+     x_p->setDefaultTextColor(Qt::black);
+     QFont f ("times");
+     f.setPixelSize(4);
+     x_p->setFont(f);
+     x_p->setPos(p.at(i));
+     //this->addEllipse(p.at(i).x() - 1, p.at(i).y() - 1, 1*2, 1*2,pen);
+     }
 
     QPointF Xmin;
     Xmin = p.at(0);
@@ -1289,13 +1360,51 @@ void GraphicScene::Sort_Vpoints(QVector<QPointF> p, QPolygonF &poly)
      }
 
 }
+
+void GraphicScene::Sort_Vpoints_new(QVector<QPointF> &p, QPolygonF &poly, QMap<std::pair<float,float>,std::pair<int,int>> map)
+{
+    //qDebug()<<p.size();
+    std::sort(p.begin(),p.end(),sortonx_up);
+    //qDebug()<<p.size();
+    auto last = std::unique (p.begin(),p.end());
+    p.erase(last,p.end());
+    //qDebug()<<p.size();
+    poly.append(p.at(0));
+     //p.remove(0);
+
+     while (true)
+     {
+         int true_trs = 0;
+         for (int i=0; i<p.size(); i++)
+         {
+             if (sort_on_map(poly.at(poly.size()-1),p.at(i),map))
+                 true_trs = i;
+         }
+         if (p.at(true_trs) == poly.at(0))
+         {
+             p.remove(true_trs);
+             break;
+         }
+         else
+         {
+             poly.append(p.at(true_trs));
+             p.remove(true_trs);
+         }
+     }
+
+
+}
 bool GraphicScene::sortonx_up(const QPointF &p1, const QPointF &p2)
 {
-    int x1 = round(p1.x()); int x2 = round(p2.x());
-    int y1 = round(p1.y()); int y2 = round(p2.y());
-    if (x1 == x2)
-        return (y1 < y2);
-    return (x1 < x2);
+    double tol = 1e-6;
+    //int x1 = round(p1.x()); int x2 = round(p2.x());
+    //int y1 = round(p1.y()); int y2 = round(p2.y());
+    //if (x1 == x2)
+      //  return (y1 < y2);
+   // return (x1 < x2);
+    if (abs(p1.x() - p2.x())<tol)
+        return ((p2.y()-p1.y())>tol);
+    return ((p2.x()-p1.x()) > tol);
 }
 
 bool GraphicScene::sort_right_rotate(const QPointF &a, const QPointF &b, const QPointF &c)
@@ -1309,6 +1418,20 @@ bool GraphicScene::sort_right_rotate(const QPointF &a, const QPointF &b, const Q
         return true;
     return false;
 }
+
+bool GraphicScene::sort_on_map(const QPointF &p1, const QPointF &p2, QMap<std::pair<float, float>, std::pair<int, int>> map)
+{
+    int trs1, trs2, i_trs1, i_trs2;
+    trs1 = map[std::make_pair(p1.x(),p1.y())].first;
+    trs2 = map[std::make_pair(p1.x(),p1.y())].second;
+    i_trs1 = map[std::make_pair(p2.x(),p2.y())].first;
+    i_trs2 = map[std::make_pair(p2.x(),p2.y())].second;
+    if (trs1 == i_trs1 || trs1 == i_trs2 ||trs2 == i_trs1 || trs2 == i_trs2)
+        return true;
+    return false;
+}
+
+
 
 
 

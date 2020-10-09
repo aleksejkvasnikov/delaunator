@@ -58,6 +58,7 @@ private slots:
 
     void on_Rect_Mesh_button_clicked();
     void on_FemBandesonButton_clicked();
+    void on_feild_but_clicked();
 };
 
 #endif // MAINWINDOW_H

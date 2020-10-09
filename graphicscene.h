@@ -78,8 +78,10 @@ public slots:
     void potential_line_plot(QList<QPolygonF> poly_list, QVector<double> Vecv);
     void potential_line_calc(mat v, mat nds, mat trs);
     void Sort_Vpoints (QVector< QPointF > temppoints, QPolygonF &poly);
+    void Sort_Vpoints_new (QVector< QPointF > &temppoints,QPolygonF &poly, QMap<std::pair<float,float>,std::pair<int,int>> p_trs);
     static bool sortonx_up(const QPointF &p1, const QPointF &p2);
     static bool sort_right_rotate(const QPointF &p1, const QPointF &p2, const QPointF &p3);
+    static bool sort_on_map(const QPointF &p1, const QPointF &p2, QMap<std::pair<float,float>,std::pair<int,int>> p_trs);
     float distance(const QPointF& pt1, const QPointF& pt2);
     QPointF getLineStart(const QPointF& pt1, const QPointF& pt2);
     QPointF getLineEnd(const QPointF& pt1, const QPointF& pt2);

@@ -84,6 +84,13 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="feild_but">
+           <property name="text">
+            <string>Feild</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -168,6 +175,14 @@
           </widget>
          </item>
         </layout>
+        <zorder>femCalc</zorder>
+        <zorder>FemBandesonButton</zorder>
+        <zorder>showE_button</zorder>
+        <zorder>pushButton_5</zorder>
+        <zorder>pushButton</zorder>
+        <zorder>make_1_button</zorder>
+        <zorder>Rect_Mesh_button</zorder>
+        <zorder>showMesh_button</zorder>
        </widget>
       </item>
       <item>
@@ -317,7 +332,7 @@
      <x>0</x>
      <y>0</y>
      <width>799</width>
-     <height>26</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>

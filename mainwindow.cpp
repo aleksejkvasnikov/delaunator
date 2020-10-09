@@ -1112,7 +1112,6 @@ void MainWindow::on_ReMesh_clicked()
    // else {
    // ui->textBrowser->setText("Refinement done");
    // }
-
 }
 
 void MainWindow::RefinementTRS(double nr_trs, double nr_nds)
@@ -1145,8 +1144,6 @@ void MainWindow::result_text(mat matrix_C, double nr_trs_F, double nr_nodes_F, m
     ui->textBrowser->append("L=|"+QString::number(L(0,0)* 1e9)+"  "+QString::number(L(0,1)* 1e9)+"|");
     ui->textBrowser->append("    |"+QString::number(L(0,1)* 1e9)+"  "+QString::number(L(1,1)* 1e9)+"|");
     ui->textBrowser->append("time=" + QString::number(times));
-
-
 }
 
 void MainWindow::on_pushButton_5_clicked()
@@ -1162,4 +1159,11 @@ void MainWindow::on_Rect_Mesh_button_clicked()
 void MainWindow::on_FemBandesonButton_clicked()
 {
     FEM_Bandeson();
+}
+
+void MainWindow::on_feild_but_clicked()
+{
+    visualization *visual;
+    visual = new visualization;
+    visual->show();
 }
