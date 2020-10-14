@@ -82,6 +82,8 @@ GraphicScene::GraphicScene(QObject *parent) :
     pointszone = new PointsZone;
     QObject::connect(rectDet, SIGNAL(detail_entered()), this, SLOT(drawFinalRect()));
     QObject::connect(circleDet, SIGNAL(detail_entered()), this, SLOT(drawFinalCircle()));
+
+
     /*QGraphicsTextItem *f= this->addText("1");
     f->setPos(40, 1);
     QGraphicsTextItem *s= this->addText("2");
@@ -1119,7 +1121,14 @@ void GraphicScene::RefinementMesh(mat trs, mat v, mat nds, double K) //уточ�
 
 void GraphicScene::potential_line_plot(QList<QPolygonF> poly_list, QVector<double> Vecv) // построение эквипотенциальных линий(реалзовано неправильно,переделываю)
 {
-  this->clear();
+    QBrush brushmesh (Qt::white);
+    if (!visual->get_mesh())
+    {
+
+        this->clear();
+    }
+
+
     QPolygonF out;
     QList<QPolygonF> inside;
     QList<QPolygonF> gr_c_p;
@@ -1129,25 +1138,53 @@ void GraphicScene::potential_line_plot(QList<QPolygonF> poly_list, QVector<doubl
         inside.push_back(inside_points.at(i)->toVector());
     }
 
-    QPen line_pen (Qt::darkGray, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen line_pen;
+    if (visual->get_line())
+    {
+     line_pen.setColor(Qt::darkGray);
+     line_pen.setWidth(0);
+     line_pen.setStyle(Qt::SolidLine);
+     line_pen.setCapStyle(Qt::RoundCap);
+     line_pen.setJoinStyle(Qt::RoundJoin);
+    }
+    else
+        line_pen.setStyle(Qt::NoPen);
+
     QPen bord_pen (Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     QPen di_pen (Qt::black, 0, Qt::DashLine, Qt::RoundCap, Qt::RoundJoin);
+    if (visual->get_color())
     this->addPolygon(out,bord_pen,interpolate2(0));
-
+    else
+        this->addPolygon(out,bord_pen,brushmesh);
+    if (visual->get_color())
+    {
     for (int i=0; i<poly_list.size();i++)
         this->addPolygon(poly_list.at(i),line_pen,interpolate2(Vecv.at(i)));
+    }
+    else
+        for (int i=0; i<poly_list.size();i++)
+            this->addPolygon(poly_list.at(i),line_pen,brushmesh);
+
+
     for (int i=0; i<inside.size();i++)
-        this->addPolygon(inside.at(i),bord_pen,Qt::white);
+        this->addPolygon(inside.at(i),bord_pen,brushmesh);
     for (int i=0; i<gr_cond_points.size();i++)
-        this->addPolygon(gr_cond_points.at(i)->toVector(),bord_pen,Qt::white);
+        this->addPolygon(gr_cond_points.at(i)->toVector(),bord_pen,brushmesh);
     for (int i=0; i<dielectric_points.size();i++)
         this->addPolygon(dielectric_points.at(i)->toVector(),di_pen,Qt::NoBrush);
 
 
 }
 
-void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
+void GraphicScene::potential_line_calc()
 {
+    mat v;
+    mat trs;
+    mat nds;
+    double start;
+    double end;
+    double step;
+    visual->get_settings(v,trs,nds,start,end,step);
     QMap<std::pair<float,float>,std::pair<int,int>> p_trs;
     QVector<QPointF> temppoints;
     QPolygonF poly;
@@ -1157,7 +1194,7 @@ void GraphicScene::potential_line_calc(mat v, mat nds, mat trs)
     QPen pen2(Qt::green);
     //int N = trs.n_rows;
     //double Ve=0.9;
-    for (double Ve = 0.1; Ve < 0.99; Ve+=0.1)
+    for (double Ve = start; Ve < end; Ve+=step)
     {
         temppoints.clear();
     for (int i=0; i < trs.n_rows; i++)
@@ -1895,6 +1932,12 @@ double GraphicScene::potentialIn(double x1, double y1, double x2, double y2, dou
     if (v>1)
         v=1;
     return v;
+
+}
+
+void GraphicScene::go_plot()
+{
+    visual->show();
 
 }
 void GraphicScene::doTriangles()

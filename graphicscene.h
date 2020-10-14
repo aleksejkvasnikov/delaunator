@@ -55,6 +55,7 @@ public:
     bool drawingMode = false;
     std::vector<Triangle2*> vZoneT;
     PointsZone *pointszone;
+    visualization *visual;
 signals:
     void move_scene_sig(bool mode);
     void send_triangles(int tr);
@@ -76,7 +77,7 @@ public slots:
     QPointF calcMidGradPoint(QPointF Pmax,QPointF Pmin,double vmax,double vmid);
     void RefinementMesh(mat trs,mat v, mat nds, double K);
     void potential_line_plot(QList<QPolygonF> poly_list, QVector<double> Vecv);
-    void potential_line_calc(mat v, mat nds, mat trs);
+    void potential_line_calc();
     void Sort_Vpoints (QVector< QPointF > temppoints, QPolygonF &poly);
     void Sort_Vpoints_new (QVector< QPointF > &temppoints,QPolygonF &poly, QMap<std::pair<float,float>,std::pair<int,int>> p_trs);
     static bool sortonx_up(const QPointF &p1, const QPointF &p2);
@@ -91,13 +92,14 @@ public slots:
     bool IsPointIn_Geron (double aAx,double aAy, double aBx,double aBy,double aCx, double aCy, double aPx,double aPy);
     double potentialIn (double aAx,double aAy, double aBx,double aBy,double aCx, double aCy, double aPx,double aPy,
                         double v1,double v2,double v3);
+    void go_plot();
 private:
     int quapoints = 36;//кол-во точек по умолчанию
     int activeDrawer = 0;
     QPointF firstPoint;    
     rectDetails *rectDet;
     circledetails *circleDet;
-    visualization *visual;
+
 
     QMap<int,int> map;
 

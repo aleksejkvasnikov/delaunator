@@ -27,7 +27,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     scene = new GraphicScene(ui->centralWidget);
     pointszone = new PointsZone;
+    visual = new visualization;
+    scene->visual = visual;
     ui->graphicsView->setScene(scene);
+
  //   ui->graphicsView->setAlignment(Qt::AlignBottom|Qt::AlignLeft);
     ui->graphicsView->setSceneRect(-6000, -3600, 12000, 7200);
 
@@ -44,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(scene, SIGNAL(mouse_positionChanged(QPointF)), this, SLOT(update_position(QPointF)));
     QObject::connect(scene->pointszone, SIGNAL(zone_entered()),this, SLOT(pointszone_entered()));
     QObject::connect(scene, SIGNAL(RefinementDone (double, double)), this, SLOT(RefinementTRS(double, double)));
+    QObject::connect(visual, SIGNAL(plot_redy()), scene, SLOT(potential_line_calc()));
 }
 
 MainWindow::~MainWindow()
@@ -54,6 +58,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::doFEMcalc(bool mode)
 {
+    visual->clear();
     QTime time;
     time.start();
     mat bcs, nodes, trs, domains;
@@ -180,9 +185,12 @@ void MainWindow::doFEMcalc(bool mode)
     //cout << "\n--------------\n";
     if (scene->getInsideSize() == 1)
     {
+        QVector <mat> V_all;
    mat v;
 
     v = solve(mat(a),f);
+    V_all.push_back(v);
+    visual->Set_Data(V_all,trs,nodes, scene->getInsideSize());
   // cout << v;
     double W;
     W=get_tri2d_cap(v, nr_nodes, nr_trs, nodes, trs, domains);
@@ -219,8 +227,8 @@ void MainWindow::doFEMcalc(bool mode)
 
     if ( scene->getInsideSize() == 2)
     {
+        QVector <mat> V_all;
 
-        //qDebug()<<"tut";
         mat f1,f2;
         f1=f;
         f2=f;
@@ -231,26 +239,18 @@ void MainWindow::doFEMcalc(bool mode)
             else if (scene->getMapData(i)==0)
                 f2(i,0)=0;
         }
-       // cout << "\n--------------\n";
-       // cout << f1;
-       // cout << "\n--------------\n";
-         //       cout << f2;
         mat v11,v22,v12;
         v11 = solve(mat(a),f1);
         v22 = solve(mat(a),f2);
         v12 = solve(mat(a),f);
-        //qDebug()<<"c11'";
+        V_all.push_back(v11);
+        V_all.push_back(v22);
+        V_all.push_back(v12);
         double W11,W12,W22;
        W11 = get_tri2d_cap(v11, nr_nodes, nr_trs, nodes, trs,domains);
-        //qDebug()<<"c12";
-        //get_tri2d_cap(v1, nr_nodes, nr_trs_2, nodes, trs_2,domains);
-        //qDebug()<<"c21";
-        //get_tri2d_cap(v2, nr_nodes, nr_trs_1, nodes, trs_1,domains);
-      //  qDebug()<<"c22'";
        W22 = get_tri2d_cap(v22, nr_nodes, nr_trs, nodes, trs,domains);
        W12 = get_tri2d_cap(v12, nr_nodes, nr_trs, nodes, trs, domains);
-
-       //qDebug()<<W11<<W22<<W12;
+       visual->Set_Data(V_all,trs,nodes, scene->getInsideSize());
        double C11, C12, C22;
        C11 = 2 * W11;
        C22 = 2 * W22;
@@ -291,6 +291,7 @@ void MainWindow::doFEMcalc(bool mode)
 
     }
     else if (scene->getInsideSize() > 2) {
+        QVector <mat> V_all;
         double N;
         mat vv;
         N=scene->getInsideSize();
@@ -305,7 +306,7 @@ void MainWindow::doFEMcalc(bool mode)
             }
             mat vii;
             vii = solve(mat(a),f_temp);
-
+            V_all.push_back(vii);
 
             double Wii, Cii;
             Wii = get_tri2d_cap(vii, nr_nodes, nr_trs, nodes, trs, domains);
@@ -327,6 +328,8 @@ void MainWindow::doFEMcalc(bool mode)
                 mat vij;
                 vij = solve(mat(a),f_temp);
                 vv=vij;
+                V_all.push_back(vij);
+
                 double Wij, Cij;
                 Wij = get_tri2d_cap(vij, nr_nodes, nr_trs, nodes, trs, domains);
                 Cij = Wij - (C(i,i)+C(j,j))/2;
@@ -335,7 +338,10 @@ void MainWindow::doFEMcalc(bool mode)
             }
         }
         //scene->show_mesh(vv, nr_trs, nodes, trs,ui->ReMeshEdit->text().toDouble(),domains);
-        v_F =vv;
+
+        //v_F =vv;
+        visual->Set_Data(V_all,trs,nodes, scene->getInsideSize());
+        v_F = V_all.at(1);
         nodes_F = nodes;
         trs_F = trs;
 
@@ -1148,7 +1154,7 @@ void MainWindow::result_text(mat matrix_C, double nr_trs_F, double nr_nodes_F, m
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    scene->potential_line_calc(v_F,nodes_F,trs_F);
+    //scene->potential_line_calc(v_F,nodes_F,trs_F);
 }
 
 void MainWindow::on_Rect_Mesh_button_clicked()
@@ -1163,7 +1169,6 @@ void MainWindow::on_FemBandesonButton_clicked()
 
 void MainWindow::on_feild_but_clicked()
 {
-    visualization *visual;
-    visual = new visualization;
     visual->show();
+
 }

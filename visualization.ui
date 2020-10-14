@@ -81,6 +81,9 @@
            <property name="text">
             <string>Эквипотенциальные линии</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item>

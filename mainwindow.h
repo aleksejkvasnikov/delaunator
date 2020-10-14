@@ -19,6 +19,7 @@ public:
     ~MainWindow();
     GraphicScene *scene;
     PointsZone *pointszone;
+    visualization *visual;
     double get_tri2d_cap(mat v, double nr_nodes, double nr_trs, mat nds, mat trs,mat domains);
     mat bcs_F, nodes_F, trs_F, domains_F,v_F,matrix_C;
     void FEM_Bandeson ();
