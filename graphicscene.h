@@ -92,7 +92,7 @@ public slots:
     bool IsPointIn_Geron (double aAx,double aAy, double aBx,double aBy,double aCx, double aCy, double aPx,double aPy);
     double potentialIn (double aAx,double aAy, double aBx,double aBy,double aCx, double aCy, double aPx,double aPy,
                         double v1,double v2,double v3);
-    void go_plot();
+
 private:
     int quapoints = 36;//кол-во точек по умолчанию
     int activeDrawer = 0;

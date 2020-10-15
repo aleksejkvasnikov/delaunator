@@ -57,8 +57,8 @@ GraphicScene::GraphicScene(QObject *parent) :
     //inside_points = new QVector<QList <QPointF> *>;
     this->setBackgroundBrush(Qt::white);
 
-    QPen penZero(Qt::darkGray, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-    QPen penLine(Qt::lightGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penZero(Qt::darkGray, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penLine(Qt::lightGray, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     this->addLine(-3600, 0, 3600, 0, penZero);
     this->addLine(0, -1800, 0, 1800, penZero);
     for(int j=-100; j<100; j++){
@@ -72,6 +72,7 @@ GraphicScene::GraphicScene(QObject *parent) :
         x_p->setDefaultTextColor(Qt::black);
         x_p->setPos(j, 0);
 
+
         QGraphicsTextItem *y_p = this->addText(QString::number(j*-1));
         y_p->setDefaultTextColor(Qt::black);
         y_p->setPos(0, j);
@@ -83,23 +84,6 @@ GraphicScene::GraphicScene(QObject *parent) :
     QObject::connect(rectDet, SIGNAL(detail_entered()), this, SLOT(drawFinalRect()));
     QObject::connect(circleDet, SIGNAL(detail_entered()), this, SLOT(drawFinalCircle()));
 
-
-    /*QGraphicsTextItem *f= this->addText("1");
-    f->setPos(40, 1);
-    QGraphicsTextItem *s= this->addText("2");
-    s->setPos(60, 1);
-    QGraphicsTextItem *t= this->addText("3");
-    t->setPos(70, 70);
-    QGraphicsTextItem *fo= this->addText("4");
-    fo->setPos(30, 70);
-    QGraphicsTextItem *fiv = this->addText("5");
-    fiv->setPos(0, 0);
-    QGraphicsTextItem *six = this->addText("6");
-    six->setPos(100, 0);
-    QGraphicsTextItem *sev = this->addText("7");
-    sev->setPos(100, 100);
-    QGraphicsTextItem *eig = this->addText("8");
-    eig->setPos(0, 100); */
 }
 
 void GraphicScene::setQualPoints(int n)
@@ -432,8 +416,11 @@ void GraphicScene::eraseAll()
     dielectric_points.clear();
     map.clear();
     this->clear();
-    QPen penZero(Qt::darkGreen, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-    QPen penLine(Qt::darkGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QGraphicsTextItem *zero_p = this->addText("0");
+    zero_p->setDefaultTextColor(Qt::red);
+    zero_p->setPos(0, 0);
+    QPen penZero(Qt::darkGray, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penLine(Qt::lightGray, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     this->addLine(-3600, 0, 3600, 0, penZero);
     this->addLine(0, -1800, 0, 1800, penZero);
     for(int j=-100; j<100; j++){
@@ -450,6 +437,7 @@ void GraphicScene::eraseAll()
         y_p->setDefaultTextColor(Qt::black);
         y_p->setPos(0, j);
     }
+
 }
 
 void GraphicScene::newObj()
@@ -506,9 +494,9 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
    // E_x = (E_x)/E_x.max();
   //  E_y = (E_y)/E_y.max();
 
-    this->clear();
+    //this->clear();
 
-    for (int i=0; i<nr_trs; i++){
+   /* for (int i=0; i<nr_trs; i++){
         double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         //qDebug() << n1 << n2 << n3 << E_mag(i,0)/E_mag.max();
         QPolygonF poly;
@@ -528,17 +516,17 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
         this->addPolygon(out,bord_pen,Qt::NoBrush);
         for (int i=0; i<inside.size();i++)
             this->addPolygon(inside.at(i),bord_pen,Qt::NoBrush);
-    }
+    }*/
 
-  /*      for (int i=0; i<nr_trs; i++){ //постоение линий
+        for (int i=0; i<nr_trs; i++){ //постоение линий
             double n1 = trs(i,0); double n2 = trs(i,1); double n3 = trs(i,2);
         double x0,y0,xn,yn;
         QPen pen(Qt::black, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         x0=(nds(n1,0)+nds(n2,0)+nds(n3,0))/3;
         y0=(nds(n1,1)+nds(n2,1)+nds(n3,1))/3;
         qDebug()<<E_x(i,0)<<"   "<<E_y(i,0);
-        xn=x0-E_x(i,0)/E_x.max();
-        yn=y0-E_y(i,0)/E_x.max();
+        xn=x0-E_x(i,0)/E_x.max()*10;
+        yn=y0-E_y(i,0)/E_x.max()*10;
         double ostr = 0.25;        // острота стрелки
         this->addLine(x0, y0, xn, yn, pen);
         double x,y,lons,ugol;
@@ -560,7 +548,7 @@ void GraphicScene::get_tri2d_E(mat v, double nr_nodes, double nr_trs, mat nds, m
         f1y2 = yn - lons * sin(ugol + ostr);
 
         this->addLine(xn, yn, f1x2, f1y2,pen);
-    }*/
+    }
 
 }
 
@@ -1935,11 +1923,7 @@ double GraphicScene::potentialIn(double x1, double y1, double x2, double y2, dou
 
 }
 
-void GraphicScene::go_plot()
-{
-    visual->show();
 
-}
 void GraphicScene::doTriangles()
 {
     // реализовать проход по всем объектам и каким-то образом сделать выбор режима областей (булевы функции) (?)
@@ -1948,8 +1932,8 @@ void GraphicScene::doTriangles()
     QGraphicsTextItem *zero_p = this->addText("0");
     zero_p->setDefaultTextColor(Qt::red);
     zero_p->setPos(0, 0);
-    QPen penZero(Qt::darkGray, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-    QPen penLine(Qt::lightGray, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penZero(Qt::darkGray, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    QPen penLine(Qt::lightGray, 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     this->addLine(-3600, 0, 3600, 0, penZero);
     this->addLine(0, -1800, 0, 1800, penZero);
     for(int j=-100; j<100; j++){

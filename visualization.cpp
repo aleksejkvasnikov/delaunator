@@ -19,10 +19,11 @@ visualization::~visualization()
 
 void visualization::Set_Data(QVector<mat> V,mat trs, mat nds, int Num)
 {
+    clear();
+    ui->comboBox->clear();
     V_all = V;
     TRS = trs;
-    NDS = nds;
-    ui->comboBox->clear();
+    NDS = nds;    
     for (int i=0; i<Num;i++)
     {
         ui->comboBox->addItem(QString::number(i+1));
@@ -39,6 +40,7 @@ void visualization::Set_Data(QVector<mat> V,mat trs, mat nds, int Num)
         Num = Num - 1;
         Pr++;
     }
+    set_default();
 }
 
 void visualization::get_settings(mat &V, mat &trs, mat &nds, double &start, double &end, double &step)
@@ -127,6 +129,7 @@ void visualization::on_checkBox_2_stateChanged(int arg1)
 
 void visualization::on_comboBox_currentIndexChanged(int index)
 {
+    if (!V_all.empty())
     V_select = V_all.at(index);
 }
 
