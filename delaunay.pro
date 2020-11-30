@@ -31,7 +31,8 @@ SOURCES += \
     tr_object.cpp \
     rectdetails.cpp \
     circledetails.cpp \
-    pointszone.cpp
+    pointszone.cpp \
+    visualization.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -40,13 +41,15 @@ HEADERS += \
     tr_object.h \
     rectdetails.h \
     circledetails.h \
-    pointszone.h
+    pointszone.h \
+    visualization.h
 
 FORMS += \
         mainwindow.ui \
     rectdetails.ui \
     circledetails.ui \
-    pointszone.ui
+    pointszone.ui \
+    visualization.ui
 RC_ICONS = triangle.ico
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/x64/ -lfade2D_x64_v141_Release
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/x64/ -lfade2D_x64_v141_Debug
@@ -61,3 +64,18 @@ DEPENDPATH += $$PWD/include
 unix|win32: LIBS += -L$$PWD/examples/lib_win64/ -llapack_win64_MT
 INCLUDEPATH += $$PWD/examples/lib_win64
 DEPENDPATH += $$PWD/examples/lib_win64
+
+unix|win32: LIBS += -L$$PWD/examples/lib_win64/ -lblas_win64_MT
+INCLUDEPATH += $$PWD/examples/lib_win64
+DEPENDPATH += $$PWD/examples/lib_win64
+
+QMAKE_EXTRA_TARGETS += before_build makefilehook
+
+makefilehook.target = $(MAKEFILE)
+makefilehook.depends = .beforebuild
+
+PRE_TARGETDEPS += .beforebuild
+
+before_build.target = .beforebuild
+before_build.depends = FORCE
+before_build.commands = chcp 1251

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>669</width>
-    <height>633</height>
+    <width>799</width>
+    <height>627</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,6 +15,12 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QGraphicsView" name="graphicsView"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QTextBrowser" name="textBrowser"/>
+    </item>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="topLayout">
       <item>
@@ -26,17 +32,17 @@
          <item>
           <widget class="QPushButton" name="pointButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
-            <string>Точка</string>
+            <string>Point</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="rectButton">
            <property name="text">
-            <string>Прямоугольник</string>
+            <string>Rect</string>
            </property>
           </widget>
          </item>
@@ -46,7 +52,7 @@
             <bool>true</bool>
            </property>
            <property name="text">
-            <string>Круг</string>
+            <string>Circle</string>
            </property>
           </widget>
          </item>
@@ -60,7 +66,28 @@
          <item>
           <widget class="QPushButton" name="pushButton_3">
            <property name="text">
-            <string>Очистить</string>
+            <string>Clear</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="loadButton">
+           <property name="text">
+            <string>Load</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="feild_but">
+           <property name="text">
+            <string>Feild</string>
            </property>
           </widget>
          </item>
@@ -76,21 +103,54 @@
          <item>
           <widget class="QPushButton" name="femCalc">
            <property name="text">
-            <string>Show1</string>
+            <string>Calculation</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="FemBandesonButton">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>FemBandeson</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="showMesh_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
-            <string>Show2</string>
+            <string>Ф</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="showE_button">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>E</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_5">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>Ф lines</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="pushButton">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="text">
             <string>Connect</string>
@@ -107,7 +167,22 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QPushButton" name="Rect_Mesh_button">
+           <property name="text">
+            <string>Rect Mesh</string>
+           </property>
+          </widget>
+         </item>
         </layout>
+        <zorder>femCalc</zorder>
+        <zorder>FemBandesonButton</zorder>
+        <zorder>showE_button</zorder>
+        <zorder>pushButton_5</zorder>
+        <zorder>pushButton</zorder>
+        <zorder>make_1_button</zorder>
+        <zorder>Rect_Mesh_button</zorder>
+        <zorder>showMesh_button</zorder>
        </widget>
       </item>
       <item>
@@ -119,21 +194,77 @@
          <item>
           <widget class="QPushButton" name="pushButton_4">
            <property name="text">
-            <string>Триангулировать</string>
+            <string>Triangulate</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_8">
            <property name="text">
-            <string>Добавить точки </string>
+            <string>Add Points</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="ReMesh">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>Refinement Mesh</string>
            </property>
           </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <item>
+              <widget class="QLabel" name="dielectric_label">
+               <property name="text">
+                <string>Dielectric constant 1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="dielectric_edit">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>K (0&lt;K&lt;1)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="ReMeshEdit">
+               <property name="text">
+                <string>0.1</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Dielectric constant 2</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="dielectric_edit_2">
+               <property name="text">
+                <string>1</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QLabel" name="label_3">
                <property name="text">
@@ -193,12 +324,6 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
-     <widget class="QGraphicsView" name="graphicsView"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="QTextBrowser" name="textBrowser"/>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -206,7 +331,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>669</width>
+     <width>799</width>
      <height>20</height>
     </rect>
    </property>

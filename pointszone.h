@@ -15,7 +15,7 @@ class PointsZone : public QDialog
 public:
     explicit PointsZone(QWidget *parent = 0);
     ~PointsZone();
-    bool getStatus(){return gr_checked;}
+    int getStatus(){return gr_checked;}
 
 signals:
     void zone_entered();
@@ -29,9 +29,11 @@ private slots:
 
     void on_buttonBox_rejected();
 
+    void on_dielectricButton_clicked();
+
 private:
     Ui::PointsZone *ui;
-    bool gr_checked = false;
+    int gr_checked = 0;
 };
 
 #endif // POINTSZONE_H
